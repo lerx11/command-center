@@ -40,6 +40,7 @@ export default async function DashboardPage() {
     return count ?? 0;
   };
 
+  // All queries are independent — run them in a single Promise.all.
   const [
     bigWinsToday,
     moneyToday,
@@ -47,6 +48,10 @@ export default async function DashboardPage() {
     bigWinsWeek,
     moneyWeek,
     tasksWeek,
+    { data: todayFocus },
+    { data: weekFocus },
+    { data: todayReview },
+    { data: weekReviews },
   ] = await Promise.all([
     run("BIG_WIN", "today"),
     run("MONEY", "today"),
@@ -54,44 +59,41 @@ export default async function DashboardPage() {
     run("BIG_WIN", "week"),
     run("MONEY", "week"),
     run("ALL", "week"),
+    // Focus time.
+    supabase
+      .from("focus_sessions")
+      .select("duration_seconds")
+      .eq("user_id", user.id)
+      .gte("started_at", dayStart)
+      .lte("started_at", dayEnd),
+    supabase
+      .from("focus_sessions")
+      .select("duration_seconds")
+      .eq("user_id", user.id)
+      .gte("started_at", weekStart),
+    // Money moved (reviews).
+    supabase
+      .from("daily_reviews")
+      .select("money_moved")
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .maybeSingle(),
+    supabase
+      .from("daily_reviews")
+      .select("money_moved")
+      .eq("user_id", user.id)
+      .gte("date", startOfWeek.toISOString().slice(0, 10)),
   ]);
 
-  // Focus time.
-  const { data: todayFocus } = await supabase
-    .from("focus_sessions")
-    .select("duration_seconds")
-    .eq("user_id", user.id)
-    .gte("started_at", dayStart)
-    .lte("started_at", dayEnd);
   const todayFocusSeconds = (todayFocus ?? []).reduce(
     (acc, r: { duration_seconds: number }) => acc + (r.duration_seconds ?? 0),
     0
   );
-
-  const { data: weekFocus } = await supabase
-    .from("focus_sessions")
-    .select("duration_seconds")
-    .eq("user_id", user.id)
-    .gte("started_at", weekStart);
   const weekFocusSeconds = (weekFocus ?? []).reduce(
     (acc, r: { duration_seconds: number }) => acc + (r.duration_seconds ?? 0),
     0
   );
-
-  // Money moved (reviews).
-  const { data: todayReview } = await supabase
-    .from("daily_reviews")
-    .select("money_moved")
-    .eq("user_id", user.id)
-    .eq("date", date)
-    .maybeSingle();
   const todayMoney = todayReview?.money_moved ?? 0;
-
-  const { data: weekReviews } = await supabase
-    .from("daily_reviews")
-    .select("money_moved")
-    .eq("user_id", user.id)
-    .gte("date", startOfWeek.toISOString().slice(0, 10));
   const weekMoney = (weekReviews ?? []).reduce(
     (acc, r: { money_moved: number | null }) => acc + (r.money_moved ?? 0),
     0

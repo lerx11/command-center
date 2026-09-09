@@ -8,15 +8,17 @@ export default async function ParkingPage() {
   const supabase = await createClient();
   const { t } = await getT();
 
-  const { data: ideas } = await supabase
-    .from("parking_ideas")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // Ideas and projects are independent — fetch them in parallel.
+  const [{ data: ideas }, { data: projects }] = await Promise.all([
+    supabase
+      .from("parking_ideas")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false }),
+  ]);
 
   const ideaList = (ideas ?? []) as unknown as ParkingIdea[];
   const projectList = (projects ?? []) as unknown as Project[];

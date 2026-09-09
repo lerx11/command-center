@@ -24,24 +24,26 @@ export default async function ProjectPage({
   const supabase = await createClient();
   const { t } = await getT();
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  // All three queries depend only on `id` — fetch them in parallel.
+  const [
+    { data: project },
+    { data: projects },
+    { data: tasks },
+  ] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase.from("projects").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (!project) notFound();
-
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false });
 
   const allProjects = (projects ?? []) as Project[];
   const p = project as unknown as Project;

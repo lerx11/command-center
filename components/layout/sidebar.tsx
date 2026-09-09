@@ -65,6 +65,7 @@ export function Sidebar({ profileName }: { profileName: string }) {
       <div className="border-t border-border/60 px-3 py-4">
         <Link
           href="/app/settings"
+          prefetch
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
             pathname === "/app/settings"

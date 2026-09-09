@@ -93,7 +93,9 @@ export function TodaySlotCard({
           )}
           <div className="mt-4 flex items-center gap-2">
             <Button asChild size="sm" className="flex-1">
-              <Link href={`/app/focus?task=${task.id}`}>
+              <Link
+                href={`/app/focus?task=${encodeURIComponent(task.id)}&mode=pomodoro`}
+              >
                 <Crosshair className="size-4" /> {t("common.focus")}
               </Link>
             </Button>

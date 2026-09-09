@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { LanguageToggle } from "@/components/i18n/language-toggle";
+import { PomodoroSoundToggle } from "@/components/settings/pomodoro-sound-toggle";
 import { useT } from "@/components/i18n/i18n-provider";
 import { updateProfileAction, logoutAction } from "@/app/app/settings/actions";
 import type { Profile } from "@/lib/types";
@@ -90,6 +91,16 @@ export function SettingsView({
         </CardHeader>
         <CardContent>
           <LanguageToggle />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle>{t("focus.pomodoro.soundTitle")}</CardTitle>
+          <CardDescription>{t("focus.pomodoro.soundDescription")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PomodoroSoundToggle />
         </CardContent>
       </Card>
 

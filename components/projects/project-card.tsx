@@ -55,7 +55,11 @@ export function ProjectCard({ project }: { project: Project }) {
 
   return (
     <div className="group flex items-start justify-between gap-3 rounded-xl border border-border/60 bg-card p-4 transition-colors hover:border-border">
-      <Link href={`/app/projects/${project.id}`} className="min-w-0 flex-1">
+      <Link
+        href={`/app/projects/${project.id}`}
+        prefetch
+        className="min-w-0 flex-1"
+      >
         <p className="truncate font-medium">{project.title}</p>
         {project.description && (
           <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">

@@ -87,7 +87,10 @@
     "startFocus": "Start focus",
     "removeFromToday": "Remove from today",
     "markDone": "Mark as done",
-    "markNotDone": "Mark as not done"
+    "markNotDone": "Mark as not done",
+    "focusStats": "Today: {sessions} sessions, {time} focused",
+    "focusStatsOne": "Today: {sessions} session, {time} focused",
+    "focusStatsNone": "No focus sessions today"
   },
   "focus": {
     "title": "Focus",
@@ -96,7 +99,32 @@
     "goToToday": "Go to Today",
     "notFound": "Task not found.",
     "sessionSaved": "Session saved. Returning to today…",
-    "shortcutHint": "Space — pause / resume · Esc — exit"
+    "shortcutHint": "Space — pause / resume · Esc — exit",
+    "pomodoro": {
+      "title": "Pomodoro",
+      "sessionLabel": "Session {n}/{total}",
+      "duration": "Duration",
+      "minutes": "min",
+      "min25": "25 min",
+      "min50": "50 min",
+      "min90": "90 min",
+      "start": "Start",
+      "break": "Break",
+      "shortBreak": "Short break",
+      "longBreak": "Long break",
+      "breakDone": "Break over. Ready to continue?",
+      "sessionComplete": "Session complete. What did you do?",
+      "startBreak": "Start break",
+      "skipBreak": "Skip",
+      "continueWorking": "Continue working",
+      "finished": "Finished",
+      "moveToTomorrow": "Move to tomorrow",
+      "nextSession": "Next session",
+      "soundTitle": "Session end sound",
+      "soundDescription": "Quiet chime when a Pomodoro ends.",
+      "soundOn": "On",
+      "soundOff": "Off"
+    }
   },
   "parking": {
     "title": "Parking Lot",

@@ -240,11 +240,14 @@ export async function clearDailyPlanSlotAction(formData: FormData) {
   if (!plan) return { success: true as const };
 
   const planRow = plan as unknown as Record<string, string | null>;
-  await supabase
-    .from("tasks")
-    .update({ status: "TODO" })
-    .eq("id", planRow[field])
-    .eq("user_id", user.id);
+  const currentTaskId = planRow[field];
+  if (currentTaskId) {
+    await supabase
+      .from("tasks")
+      .update({ status: "TODO" })
+      .eq("id", currentTaskId)
+      .eq("user_id", user.id);
+  }
 
   const { error } = await supabase
     .from("daily_plans")
@@ -353,5 +356,6 @@ export async function saveFocusSessionAction(formData: FormData) {
   if (error) return { error: "errors.couldNotSaveFocusSession" };
 
   revalidatePath("/app/dashboard");
+  revalidatePath("/app/today");
   return { success: true as const };
 }

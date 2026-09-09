@@ -22,6 +22,13 @@ export function KeyboardShortcuts() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Prefetch shortcut-target routes once on mount so keyboard nav is instant.
+  useEffect(() => {
+    Object.values(ROUTE_SHORTCUTS).forEach((href) => {
+      router.prefetch(href);
+    });
+  }, [router]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;

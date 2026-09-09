@@ -87,7 +87,11 @@
     "startFocus": "Начать фокус",
     "removeFromToday": "Убрать с сегодня",
     "markDone": "Отметить готовым",
-    "markNotDone": "Отметить неготовым"
+    "markNotDone": "Отметить неготовым",
+    "focusStats": "Сегодня: {sessions} сессий, {time} в фокусе",
+    "focusStatsOne": "Сегодня: {sessions} сессия, {time} в фокусе",
+    "focusStatsFew": "Сегодня: {sessions} сессии, {time} в фокусе",
+    "focusStatsNone": "Сегодня нет сессий фокуса"
   },
   "focus": {
     "title": "Фокус",
@@ -96,7 +100,32 @@
     "goToToday": "На Сегодня",
     "notFound": "Задача не найдена.",
     "sessionSaved": "Сессия сохранена. Возврат на Сегодня…",
-    "shortcutHint": "Пробел — пауза / продолжить · Esc — выход"
+    "shortcutHint": "Пробел — пауза / продолжить · Esc — выход",
+    "pomodoro": {
+      "title": "Pomodoro",
+      "sessionLabel": "Сессия {n}/{total}",
+      "duration": "Длительность",
+      "minutes": "мин",
+      "min25": "25 мин",
+      "min50": "50 мин",
+      "min90": "90 мин",
+      "start": "Начать",
+      "break": "Перерыв",
+      "shortBreak": "Короткий перерыв",
+      "longBreak": "Длинный перерыв",
+      "breakDone": "Перерыв завершён. Готовы продолжить?",
+      "sessionComplete": "Сессия завершена. Что вы сделали?",
+      "startBreak": "Начать перерыв",
+      "skipBreak": "Пропустить",
+      "continueWorking": "Продолжить работать",
+      "finished": "Готово",
+      "moveToTomorrow": "Перенести на завтра",
+      "nextSession": "Следующая сессия",
+      "soundTitle": "Звук окончания сессии",
+      "soundDescription": "Тихий сигнал при завершении Pomodoro.",
+      "soundOn": "Включён",
+      "soundOff": "Выключен"
+    }
   },
   "parking": {
     "title": "Парковка",

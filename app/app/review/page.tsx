@@ -21,46 +21,48 @@ export default async function ReviewPage() {
   const start = new Date(date + "T00:00:00").toISOString();
   const end = new Date(date + "T23:59:59").toISOString();
 
-  // Done today.
-  const { data: done } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status", "DONE")
-    .gte("completed_at", start)
-    .lte("completed_at", end)
-    .order("completed_at", { ascending: false });
-
-  // Unfinished (today's plan tasks that are not done, plus due-today tasks).
-  const { data: unfinished } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_id", user.id)
-    .in("status", ["TODO", "IN_PROGRESS"])
-    .or(`due_date.eq.${date},due_date.is.null`)
-    .order("created_at", { ascending: false });
-
-  // Candidates for tomorrow (any not-done task).
-  const { data: cand } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_id", user.id)
-    .in("status", ["TODO", "IN_PROGRESS"])
-    .order("created_at", { ascending: false });
-
-  // Today's review.
-  const { data: reviewRow } = await supabase
-    .from("daily_reviews")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("date", date)
-    .maybeSingle();
-
-  // Projects (for menus).
-  const { data: pj } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // All queries are independent — fetch them in parallel.
+  const [
+    { data: done },
+    { data: unfinished },
+    { data: cand },
+    { data: reviewRow },
+    { data: pj },
+  ] = await Promise.all([
+    // Done today.
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "DONE")
+      .gte("completed_at", start)
+      .lte("completed_at", end)
+      .order("completed_at", { ascending: false }),
+    // Unfinished (today's plan tasks that are not done, plus due-today tasks).
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["TODO", "IN_PROGRESS"])
+      .or(`due_date.eq.${date},due_date.is.null`)
+      .order("created_at", { ascending: false }),
+    // Candidates for tomorrow (any not-done task).
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["TODO", "IN_PROGRESS"])
+      .order("created_at", { ascending: false }),
+    // Today's review.
+    supabase
+      .from("daily_reviews")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .maybeSingle(),
+    // Projects (for menus).
+    supabase.from("projects").select("*").order("created_at", { ascending: false }),
+  ]);
 
   const doneTasks = (done ?? []) as unknown as Task[];
   const unfinishedTasks = (unfinished ?? []) as unknown as Task[];

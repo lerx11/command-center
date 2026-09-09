@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useT } from "@/components/i18n/i18n-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Loading({ label }: { label?: string }) {
   const t = useT();
@@ -17,12 +18,42 @@ export function Loading({ label }: { label?: string }) {
 export function PageSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-      <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-40 w-full" />
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="h-32 animate-pulse rounded-xl bg-muted" />
-        <div className="h-32 animate-pulse rounded-xl bg-muted" />
-        <div className="h-32 animate-pulse rounded-xl bg-muted" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Full-page loading skeleton used by route `loading.tsx` files.
+ * Mirrors the max-width container of AppShell so layout does not shift.
+ */
+export function PageLoading() {
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <Skeleton className="h-8 w-48" />
+
+      {/* Hero / stat block */}
+      <Skeleton className="h-32 w-full" />
+
+      {/* Cards grid */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Skeleton className="h-36 w-full" />
+        <Skeleton className="h-36 w-full" />
+        <Skeleton className="h-36 w-full" />
+      </div>
+
+      {/* Section */}
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
       </div>
     </div>
   );

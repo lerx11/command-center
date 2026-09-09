@@ -8,9 +8,12 @@ import { upsertCashTargetAction } from "@/app/app/today/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/utils";
+import { useI18n, useT } from "@/components/i18n/i18n-provider";
 import type { CashTarget } from "@/lib/types";
 
 export function CashTarget({ target }: { target: CashTarget | null }) {
+  const t = useT();
+  const { locale } = useI18n();
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -23,9 +26,9 @@ export function CashTarget({ target }: { target: CashTarget | null }) {
   const save = (fd: FormData) => {
     startTransition(async () => {
       const res = await upsertCashTargetAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
       else {
-        toast.success("Saved ✓");
+        toast.success(t("toasts.saved"));
         setEditing(false);
       }
     });
@@ -38,14 +41,14 @@ export function CashTarget({ target }: { target: CashTarget | null }) {
         className="rounded-xl border border-border/60 bg-card p-4"
       >
         <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Cash Target
+          {t("today.cashTarget")}
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <Field label="Min" name="min_target" defaultValue={min} />
-          <Field label="Max" name="max_target" defaultValue={max} />
-          <Field label="Received" name="received" defaultValue={received} />
-          <Field label="In work" name="in_progress" defaultValue={inProgress} />
-          <Field label="Expected" name="expected" defaultValue={expected} />
+          <Field label={t("today.min")} name="min_target" defaultValue={min} />
+          <Field label={t("today.max")} name="max_target" defaultValue={max} />
+          <Field label={t("today.received")} name="received" defaultValue={received} />
+          <Field label={t("today.inWork")} name="in_progress" defaultValue={inProgress} />
+          <Field label={t("today.expected")} name="expected" defaultValue={expected} />
         </div>
         <div className="mt-3 flex gap-2">
           <Button
@@ -54,10 +57,10 @@ export function CashTarget({ target }: { target: CashTarget | null }) {
             size="sm"
             onClick={() => setEditing(false)}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" size="sm" disabled={pending}>
-            {pending ? "Saving…" : "Save"}
+            {pending ? t("common.saving") : t("common.save")}
           </Button>
         </div>
       </form>
@@ -71,18 +74,18 @@ export function CashTarget({ target }: { target: CashTarget | null }) {
     <div className="rounded-xl border border-border/60 bg-card p-4">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Cash Target
+          {t("today.cashTarget")}
         </p>
         <button
           onClick={() => setEditing(true)}
           className="text-muted-foreground hover:text-foreground"
-          aria-label="Edit cash target"
+          aria-label={t("today.editCashTarget")}
         >
           <Pencil className="size-3.5" />
         </button>
       </div>
       <p className="mt-1 text-xl font-semibold tabular">
-        {formatMoney(min)} — {formatMoney(max)}
+        {formatMoney(min, locale)} — {formatMoney(max, locale)}
       </p>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
         <div
@@ -91,9 +94,9 @@ export function CashTarget({ target }: { target: CashTarget | null }) {
         />
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-        <Metric label="Received" value={formatMoney(received)} />
-        <Metric label="In work" value={formatMoney(inProgress)} />
-        <Metric label="Expected" value={formatMoney(expected)} />
+        <Metric label={t("today.received")} value={formatMoney(received, locale)} />
+        <Metric label={t("today.inWork")} value={formatMoney(inProgress, locale)} />
+        <Metric label={t("today.expected")} value={formatMoney(expected, locale)} />
       </div>
     </div>
   );

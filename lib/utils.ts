@@ -1,13 +1,24 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { Locale } from "@/lib/i18n-shared";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: Date | string) {
+const DATE_LOCALE: Record<Locale, string> = {
+  ru: "ru-RU",
+  en: "en-US",
+};
+
+const MONEY_LOCALE: Record<Locale, string> = {
+  ru: "ru-RU",
+  en: "en-US",
+};
+
+export function formatDate(date: Date | string, locale: Locale = "ru") {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(DATE_LOCALE[locale] ?? "ru-RU", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -41,9 +52,12 @@ export function formatDuration(seconds: number) {
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-export function formatMoney(amount: number | null | undefined) {
+export function formatMoney(
+  amount: number | null | undefined,
+  locale: Locale = "ru"
+) {
   if (amount === null || amount === undefined) return "—";
-  return new Intl.NumberFormat("ru-RU", {
+  return new Intl.NumberFormat(MONEY_LOCALE[locale] ?? "ru-RU", {
     style: "currency",
     currency: "RUB",
     maximumFractionDigits: 0,

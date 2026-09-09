@@ -10,7 +10,7 @@ function getErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "message" in error) {
     return String((error as { message: unknown }).message);
   }
-  return "Something went wrong. Please try again.";
+  return "errors.somethingWentWrong";
 }
 
 export async function loginAction(formData: FormData) {
@@ -20,7 +20,7 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
   }
 
   const supabase = await createClient();
@@ -31,7 +31,7 @@ export async function loginAction(formData: FormData) {
   });
 
   if (error) {
-    return { error: "Invalid email or password." };
+    return { error: "errors.invalidEmailOrPassword" };
   }
 
   const redirectTo = formData.get("redirect") as string | null;
@@ -47,7 +47,7 @@ export async function registerAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
   }
 
   const supabase = await createClient();
@@ -74,8 +74,7 @@ export async function registerAction(formData: FormData) {
   }
 
   return {
-    success:
-      "Check your inbox to confirm your email, then sign in.",
+    success: "auth.checkInbox" as const,
   };
 }
 
@@ -85,7 +84,7 @@ export async function forgotPasswordAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid email" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
   }
 
   const supabase = await createClient();
@@ -100,7 +99,7 @@ export async function forgotPasswordAction(formData: FormData) {
     return { error: getErrorMessage(error) };
   }
 
-  return { success: "Reset link sent. Check your inbox." };
+  return { success: "auth.resetLinkSent" as const };
 }
 
 export async function resetPasswordAction(formData: FormData) {
@@ -108,10 +107,10 @@ export async function resetPasswordAction(formData: FormData) {
   const confirm = String(formData.get("confirmPassword") ?? "");
 
   if (password.length < 6) {
-    return { error: "Password must be at least 6 characters." };
+    return { error: "errors.passwordMinLength" };
   }
   if (password !== confirm) {
-    return { error: "Passwords do not match." };
+    return { error: "errors.passwordsDoNotMatch" };
   }
 
   const supabase = await createClient();

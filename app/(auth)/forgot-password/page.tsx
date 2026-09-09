@@ -15,8 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useT } from "@/components/i18n/i18n-provider";
 
 export default function ForgotPasswordPage() {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const [sent, setSent] = useState(false);
 
@@ -32,11 +34,11 @@ export default function ForgotPasswordPage() {
     startTransition(async () => {
       const res = await forgotPasswordAction(fd);
       if (res?.error) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
       if (res?.success) {
-        toast.success(res.success);
+        toast.success(t(res.success));
         setSent(true);
       }
     });
@@ -45,22 +47,21 @@ export default function ForgotPasswordPage() {
   return (
     <Card className="border-border/60 shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Reset password</CardTitle>
+        <CardTitle className="text-2xl">{t("auth.resetPassword")}</CardTitle>
         <CardDescription>
-          We&apos;ll send a recovery link to your email.
+          {t("auth.resetDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {sent ? (
           <p className="text-sm text-muted-foreground">
-            If an account exists for that email, a reset link is on its way.
-            Check your inbox and follow the link to set a new password.
+            {t("auth.resetSent")}
           </p>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("auth.email")}
               </label>
               <Input
                 id="email"
@@ -70,12 +71,12 @@ export default function ForgotPasswordPage() {
               />
               {form.formState.errors.email && (
                 <p className="text-xs text-destructive">
-                  {form.formState.errors.email.message}
+                  {t(form.formState.errors.email.message ?? "")}
                 </p>
               )}
             </div>
             <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Sending…" : "Send reset link"}
+              {pending ? t("auth.sending") : t("auth.sendResetLink")}
             </Button>
           </form>
         )}

@@ -23,9 +23,11 @@ import {
   setProjectStatusAction,
   deleteProjectAction,
 } from "@/app/app/projects/actions";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { Project } from "@/lib/types";
 
 export function ProjectCard({ project }: { project: Project }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   const setStatus = (status: Project["status"]) => {
@@ -35,10 +37,10 @@ export function ProjectCard({ project }: { project: Project }) {
     startTransition(async () => {
       const res = await setProjectStatusAction(fd);
       if (res?.error) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
-      toast.success("Updated ✓");
+      toast.success(t("toasts.updated"));
     });
   };
 
@@ -47,7 +49,7 @@ export function ProjectCard({ project }: { project: Project }) {
     fd.set("id", project.id);
     startTransition(async () => {
       const res = await deleteProjectAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
     });
   };
 
@@ -71,7 +73,7 @@ export function ProjectCard({ project }: { project: Project }) {
           project={project}
           trigger={
             <button className="rounded-md px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100">
-              Edit
+              {t("common.edit")}
             </button>
           }
         />
@@ -80,7 +82,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <button
               className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               disabled={pending}
-              aria-label="Project actions"
+              aria-label={t("projects.projectActions")}
             >
               <MoreHorizontal className="size-4" />
             </button>
@@ -88,22 +90,22 @@ export function ProjectCard({ project }: { project: Project }) {
           <DropdownMenuContent align="end">
             {project.status !== "ACTIVE" && (
               <DropdownMenuItem onClick={() => setStatus("ACTIVE")}>
-                <Play className="size-4" /> Activate
+                <Play className="size-4" /> {t("common.activate")}
               </DropdownMenuItem>
             )}
             {project.status !== "PAUSED" && (
               <DropdownMenuItem onClick={() => setStatus("PAUSED")}>
-                <Pause className="size-4" /> Pause
+                <Pause className="size-4" /> {t("common.pause")}
               </DropdownMenuItem>
             )}
             {project.status !== "COMPLETED" && (
               <DropdownMenuItem onClick={() => setStatus("COMPLETED")}>
-                <CheckCircle2 className="size-4" /> Complete
+                <CheckCircle2 className="size-4" /> {t("common.complete")}
               </DropdownMenuItem>
             )}
             {project.status !== "PARKED" && (
               <DropdownMenuItem onClick={() => setStatus("PARKED")}>
-                <ParkIcon className="size-4" /> Park
+                <ParkIcon className="size-4" /> {t("common.park")}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
@@ -111,7 +113,7 @@ export function ProjectCard({ project }: { project: Project }) {
               onClick={del}
               className="text-destructive focus:text-destructive"
             >
-              Delete
+              {t("common.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { todayISO } from "@/lib/utils";
+import { getT } from "@/lib/i18n";
 import { CommandCenterHeader } from "@/components/command-center/command-center-header";
 import { CashTarget } from "@/components/today/cash-target";
 import { TodaySlotCard } from "@/components/today/today-slot-card";
@@ -25,6 +26,7 @@ function currentPeriod() {
 
 export default async function TodayPage() {
   const supabase = await createClient();
+  const { t } = await getT();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -120,8 +122,8 @@ export default async function TodayPage() {
 
       {allEmpty ? (
         <EmptyState
-          title="Nothing planned for today yet."
-          description="Pick one task that makes today a win. The simpler, the better."
+          title={t("today.nothingPlanned")}
+          description={t("today.nothingPlannedHint")}
           action={
             <div className="flex flex-wrap justify-center gap-2">
               <TaskForm
@@ -129,12 +131,12 @@ export default async function TodayPage() {
                 defaultType="BIG_WIN"
                 trigger={
                   <Button>
-                    <Plus className="size-4" /> Choose ONE BIG WIN
+                    <Plus className="size-4" /> {t("today.chooseBigWin")}
                   </Button>
                 }
               />
               <Button asChild variant="outline">
-                <Link href="/app/projects">View projects</Link>
+                <Link href="/app/projects">{t("today.viewProjects")}</Link>
               </Button>
             </div>
           }
@@ -142,7 +144,7 @@ export default async function TodayPage() {
       ) : (
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-            Today
+            {t("today.title")}
           </h2>
           <div className="grid gap-3 lg:grid-cols-3">
             <TodaySlotCard

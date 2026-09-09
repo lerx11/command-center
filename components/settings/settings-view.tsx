@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { LanguageToggle } from "@/components/i18n/language-toggle";
+import { useT } from "@/components/i18n/i18n-provider";
 import { updateProfileAction, logoutAction } from "@/app/app/settings/actions";
 import type { Profile } from "@/lib/types";
 
@@ -22,6 +24,7 @@ export function SettingsView({
   profile: Pick<Profile, "name"> | null;
   email: string | null;
 }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState(profile?.name ?? "");
 
@@ -30,8 +33,8 @@ export function SettingsView({
     fd.set("name", name);
     startTransition(async () => {
       const res = await updateProfileAction(fd);
-      if (res?.error) toast.error(res.error);
-      else toast.success("Profile updated ✓");
+      if (res?.error) toast.error(t(res.error));
+      else toast.success(t("toasts.profileUpdated"));
     });
   };
 
@@ -41,39 +44,39 @@ export function SettingsView({
       try {
         await logoutAction(fd);
       } catch {
-        toast.error("Could not log out.");
+        toast.error(t("toasts.couldNotLogout"));
       }
     });
   };
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
 
       <Card className="border-border/60">
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Your name is shown in the sidebar.</CardDescription>
+          <CardTitle>{t("settings.profile")}</CardTitle>
+          <CardDescription>{t("settings.profileDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium">{t("settings.name")}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium">{t("settings.email")}</label>
             <Input value={email ?? ""} disabled className="opacity-70" />
           </div>
           <Button onClick={save} disabled={pending}>
-            {pending ? "Saving…" : "Save profile"}
+            {pending ? t("common.saving") : t("settings.saveProfile")}
           </Button>
         </CardContent>
       </Card>
 
       <Card className="border-border/60">
         <CardHeader>
-          <CardTitle>Theme</CardTitle>
-          <CardDescription>Dark mode is the default.</CardDescription>
+          <CardTitle>{t("theme.title")}</CardTitle>
+          <CardDescription>{t("theme.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <ThemeToggle />
@@ -82,11 +85,21 @@ export function SettingsView({
 
       <Card className="border-border/60">
         <CardHeader>
-          <CardTitle>Account</CardTitle>
+          <CardTitle>{t("language.title")}</CardTitle>
+          <CardDescription>{t("language.description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LanguageToggle />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle>{t("settings.account")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Button variant="outline" onClick={logout} disabled={pending}>
-            Log out
+            {t("settings.logout")}
           </Button>
         </CardContent>
       </Card>

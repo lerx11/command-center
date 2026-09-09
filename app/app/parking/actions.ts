@@ -12,10 +12,10 @@ export async function quickCaptureAction(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const title = String(formData.get("title") ?? "").trim();
-  if (!title) return { error: "What came to mind?" };
+  if (!title) return { error: "errors.whatCameToMind" };
 
   const { error } = await supabase.from("parking_ideas").insert({
     user_id: user.id,
@@ -24,7 +24,7 @@ export async function quickCaptureAction(formData: FormData) {
     status: "NEW",
   });
 
-  if (error) return { error: "Could not save the idea." };
+  if (error) return { error: "errors.couldNotSaveIdea" };
 
   revalidatePath("/app/parking");
   return { success: true as const };
@@ -35,7 +35,7 @@ export async function deleteParkingIdeaAction(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const { error } = await supabase
@@ -44,7 +44,7 @@ export async function deleteParkingIdeaAction(formData: FormData) {
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) return { error: "Could not delete." };
+  if (error) return { error: "errors.couldNotDeleteIdea" };
   revalidatePath("/app/parking");
   return { success: true as const };
 }
@@ -54,7 +54,7 @@ export async function moveParkingIdeaAction(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const target = String(formData.get("target") ?? ""); // TODAY | PROJECT | LATER
@@ -66,7 +66,7 @@ export async function moveParkingIdeaAction(formData: FormData) {
     .update({ status: "CONVERTED", converted_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
-  if (updError) return { error: "Could not update the idea." };
+  if (updError) return { error: "errors.couldNotUpdateIdea" };
 
   // Fetch the idea title to convert into a task.
   const { data: idea } = await supabase
@@ -75,7 +75,7 @@ export async function moveParkingIdeaAction(formData: FormData) {
     .eq("id", id)
     .maybeSingle();
 
-  if (!idea) return { error: "Idea not found." };
+  if (!idea) return { error: "errors.ideaNotFound" };
 
   if (target === "TODAY") {
     const { error: tErr } = await supabase.from("tasks").insert({
@@ -88,7 +88,7 @@ export async function moveParkingIdeaAction(formData: FormData) {
       due_date: todayISO(),
       project_id: projectId === "null" ? null : projectId,
     });
-    if (tErr) return { error: "Could not convert to task." };
+    if (tErr) return { error: "errors.couldNotConvertToTask" };
   } else if (target === "PROJECT") {
     const { error: tErr } = await supabase.from("tasks").insert({
       user_id: user.id,
@@ -99,7 +99,7 @@ export async function moveParkingIdeaAction(formData: FormData) {
       priority: "NORMAL",
       project_id: projectId === "null" ? null : projectId,
     });
-    if (tErr) return { error: "Could not convert to task." };
+    if (tErr) return { error: "errors.couldNotConvertToTask" };
   }
   // LATER: just marks status as converted (no task created).
 
@@ -114,7 +114,7 @@ export async function assignParkingToProjectAction(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const projectId = String(formData.get("projectId") || "null");
@@ -125,7 +125,7 @@ export async function assignParkingToProjectAction(formData: FormData) {
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) return { error: "Could not move." };
+  if (error) return { error: "errors.couldNotMove" };
   revalidatePath("/app/parking");
   return { success: true as const };
 }

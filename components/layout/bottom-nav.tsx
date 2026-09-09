@@ -4,16 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarCheck, Crosshair, FolderKanban, ParkingSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/i18n-provider";
 
 const ITEMS = [
-  { href: "/app/today", label: "Today", icon: CalendarCheck },
-  { href: "/app/focus", label: "Focus", icon: Crosshair },
-  { href: "/app/projects", label: "Projects", icon: FolderKanban },
-  { href: "/app/parking", label: "Parking", icon: ParkingSquare },
-];
+  { href: "/app/today", key: "nav.today", icon: CalendarCheck },
+  { href: "/app/focus", key: "nav.focus", icon: Crosshair },
+  { href: "/app/projects", key: "nav.projects", icon: FolderKanban },
+  { href: "/app/parking", key: "nav.parking", icon: ParkingSquare },
+] as const;
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = useT();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
@@ -32,7 +34,7 @@ export function BottomNav() {
                 )}
               >
                 <Icon className="size-5" />
-                {item.label}
+                {t(item.key)}
               </Link>
             </li>
           );

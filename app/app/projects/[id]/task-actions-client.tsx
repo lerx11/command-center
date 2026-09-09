@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { TaskMenu } from "@/components/tasks/task-menu";
 import { setTaskStatusAction } from "@/app/app/tasks/actions";
 import { TASK_TYPE_META } from "@/lib/constants";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { Project, Task } from "@/lib/types";
 
 export function TaskActionsClient({
@@ -15,6 +16,7 @@ export function TaskActionsClient({
   task: Task;
   projects: Project[];
 }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const done = task.status === "DONE";
 
@@ -24,8 +26,8 @@ export function TaskActionsClient({
     fd.set("status", done ? "TODO" : "DONE");
     startTransition(async () => {
       const res = await setTaskStatusAction(fd);
-      if (res?.error) toast.error(res.error);
-      else if (!done) toast.success("Task completed ✓");
+      if (res?.error) toast.error(t(res.error));
+      else if (!done) toast.success(t("toasts.taskCompleted"));
     });
   };
 
@@ -36,7 +38,7 @@ export function TaskActionsClient({
       <button
         onClick={toggle}
         disabled={pending}
-        aria-label={done ? "Mark as not done" : "Mark as done"}
+        aria-label={done ? t("today.markNotDone") : t("today.markDone")}
         className="shrink-0"
       >
         <div

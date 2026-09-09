@@ -28,7 +28,7 @@ async function countActiveProjects(
 
 export async function createProjectAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const parsed = projectSchema.safeParse({
     title: formData.get("title"),
@@ -37,7 +37,7 @@ export async function createProjectAction(formData: FormData) {
     status: formData.get("status") || "ACTIVE",
   });
   if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
 
   // Soft limit: warn when activating beyond MAX_ACTIVE_PROJECTS.
   if (
@@ -47,7 +47,7 @@ export async function createProjectAction(formData: FormData) {
     const active = await countActiveProjects(supabase, user.id);
     if (active >= MAX_ACTIVE_PROJECTS) {
       return {
-        error: `You already have ${MAX_ACTIVE_PROJECTS} active projects. Park one first to keep focus.`,
+        error: "errors.activeProjectsLimit",
         limit: true as const,
       };
     }
@@ -61,7 +61,7 @@ export async function createProjectAction(formData: FormData) {
     status: parsed.data.status,
     position: 0,
   });
-  if (error) return { error: "Could not create the project." };
+  if (error) return { error: "errors.couldNotCreateProject" };
 
   revalidatePath("/app/projects");
   return { success: true as const };
@@ -70,7 +70,7 @@ export async function createProjectAction(formData: FormData) {
 // Force-create even if the active limit is exceeded (user confirmed the warning).
 export async function forceCreateProjectAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const parsed = projectSchema.safeParse({
     title: formData.get("title"),
@@ -79,7 +79,7 @@ export async function forceCreateProjectAction(formData: FormData) {
     status: formData.get("status") || "ACTIVE",
   });
   if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
 
   const { error } = await supabase.from("projects").insert({
     user_id: user.id,
@@ -89,7 +89,7 @@ export async function forceCreateProjectAction(formData: FormData) {
     status: parsed.data.status,
     position: 0,
   });
-  if (error) return { error: "Could not create the project." };
+  if (error) return { error: "errors.couldNotCreateProject" };
 
   revalidatePath("/app/projects");
   return { success: true as const };
@@ -97,7 +97,7 @@ export async function forceCreateProjectAction(formData: FormData) {
 
 export async function updateProjectAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const parsed = projectSchema.safeParse({
@@ -107,7 +107,7 @@ export async function updateProjectAction(formData: FormData) {
     status: formData.get("status"),
   });
   if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
 
   const { error } = await supabase
     .from("projects")
@@ -119,7 +119,7 @@ export async function updateProjectAction(formData: FormData) {
     })
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not update the project." };
+  if (error) return { error: "errors.couldNotUpdateProject" };
 
   revalidatePath("/app/projects");
   revalidatePath(`/app/projects/${id}`);
@@ -128,7 +128,7 @@ export async function updateProjectAction(formData: FormData) {
 
 export async function setProjectStatusAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const status = String(formData.get("status")) as
@@ -150,7 +150,7 @@ export async function setProjectStatusAction(formData: FormData) {
     const wasActive = currentCat.data?.status === "ACTIVE";
     if (!wasActive && activeCount >= MAX_ACTIVE_PROJECTS && currentCat.data?.category !== "PARKING") {
       return {
-        error: `You already have ${MAX_ACTIVE_PROJECTS} active projects. Park one first.`,
+        error: "errors.activeProjectsLimitShort",
         limit: true as const,
       };
     }
@@ -161,7 +161,7 @@ export async function setProjectStatusAction(formData: FormData) {
     .update({ status })
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not update the project." };
+  if (error) return { error: "errors.couldNotUpdateProject" };
 
   revalidatePath("/app/projects");
   revalidatePath(`/app/projects/${id}`);
@@ -170,7 +170,7 @@ export async function setProjectStatusAction(formData: FormData) {
 
 export async function deleteProjectAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const { error } = await supabase
@@ -178,7 +178,7 @@ export async function deleteProjectAction(formData: FormData) {
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not delete the project." };
+  if (error) return { error: "errors.couldNotDeleteProject" };
 
   revalidatePath("/app/projects");
   redirect(`/app/projects`);

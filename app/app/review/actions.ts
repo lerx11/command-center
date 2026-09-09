@@ -14,7 +14,7 @@ async function getUser() {
 
 export async function upsertReviewAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const date = String(formData.get("date"));
   const moneyMoved = Number(formData.get("money_moved") || 0);
@@ -35,7 +35,7 @@ export async function upsertReviewAction(formData: FormData) {
       },
       { onConflict: "user_id, date" }
     );
-  if (error) return { error: "Could not save review." };
+  if (error) return { error: "errors.couldNotSaveReview" };
 
   revalidatePath("/app/review");
   revalidatePath("/app/dashboard");
@@ -45,7 +45,7 @@ export async function upsertReviewAction(formData: FormData) {
 // Plan tomorrow: set tomorrow's daily_plan slots + create energy tasks.
 export async function planTomorrowAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const tomorrow = addDays(todayISO(), 1);
   const bigWinId = String(formData.get("big_win") || "null");
@@ -68,7 +68,7 @@ export async function planTomorrowAction(formData: FormData) {
       .insert({ user_id: user.id, date: tomorrow })
       .select("id")
       .single();
-    if (error || !np) return { error: "Could not prepare tomorrow's plan." };
+    if (error || !np) return { error: "errors.couldNotPrepareTomorrowPlan" };
     planId = np.id;
   }
 
@@ -81,7 +81,7 @@ export async function planTomorrowAction(formData: FormData) {
     .from("daily_plans")
     .update(update)
     .eq("id", planId);
-  if (updError) return { error: "Could not set tomorrow's slots." };
+  if (updError) return { error: "errors.couldNotSetTomorrowSlots" };
 
   // Energy tasks for tomorrow.
   for (let i = 0; i < energyTitles.length; i++) {

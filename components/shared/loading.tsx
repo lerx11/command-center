@@ -1,10 +1,15 @@
-import { Loader2 } from "lucide-react";
+"use client";
 
-export function Loading({ label = "Loading…" }: { label?: string }) {
+import { Loader2 } from "lucide-react";
+import { useT } from "@/components/i18n/i18n-provider";
+
+export function Loading({ label }: { label?: string }) {
+  const t = useT();
+  const display = label ?? t("loading.default");
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <Loader2 className="size-4 animate-spin" />
-      {label}
+      {display}
     </div>
   );
 }

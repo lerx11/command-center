@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { formatDuration } from "@/lib/utils";
 import { saveFocusSessionAction } from "@/app/app/tasks/actions";
+import { useT } from "@/components/i18n/i18n-provider";
 
 type Phase = "running" | "paused" | "completed";
 
 export function useFocusTimer(taskId: string | null) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>("running");
   const [seconds, setSeconds] = useState(0);
   const startedAtRef = useRef<Date>(new Date());
@@ -37,9 +39,9 @@ export function useFocusTimer(taskId: string | null) {
     fd.set("startedAt", startedAtRef.current.toISOString());
     fd.set("durationSeconds", String(seconds));
     const res = await saveFocusSessionAction(fd);
-    if (res?.error) toast.error(res.error);
-    else toast.success("Focus session completed.");
-  }, [seconds, taskId]);
+    if (res?.error) toast.error(t(res.error));
+    else toast.success(t("toasts.focusSessionCompleted"));
+  }, [seconds, taskId, t]);
 
   // Spacebar toggles pause/resume (when not typing) — handled in component.
   return {

@@ -1,10 +1,12 @@
 import { createClient } from "@/utils/supabase/server";
+import { getT } from "@/lib/i18n";
 import { ParkingIdeaCard } from "@/components/parking/parking-idea-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import type { ParkingIdea, Project } from "@/lib/types";
 
 export default async function ParkingPage() {
   const supabase = await createClient();
+  const { t } = await getT();
 
   const { data: ideas } = await supabase
     .from("parking_ideas")
@@ -22,16 +24,16 @@ export default async function ParkingPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Parking Lot</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("parking.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ideas live here until you decide to make them tasks.
+          {t("parking.description")}
         </p>
       </header>
 
       {ideaList.length === 0 ? (
         <EmptyState
-          title="No ideas parked yet."
-          description="Use the + button anywhere to capture a thought — it won't become a task until you decide."
+          title={t("parking.empty")}
+          description={t("parking.emptyHint")}
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">

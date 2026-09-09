@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Pause, Play, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFocusTimer } from "@/hooks/use-focus-timer";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { Task } from "@/lib/types";
 
 function isTyping(target: EventTarget | null) {
@@ -15,6 +16,7 @@ function isTyping(target: EventTarget | null) {
 
 export function FocusTimer({ task }: { task: Task }) {
   const router = useRouter();
+  const t = useT();
   const { phase, display, pause, resume, complete } = useFocusTimer(task.id);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function FocusTimer({ task }: { task: Task }) {
     <div className="flex min-h-svh flex-col items-center justify-center px-6 text-center">
       <div className="focus-veil absolute inset-0 -z-10" />
       <p className="text-xs font-semibold uppercase tracking-[0.4em] text-muted-foreground">
-        Focus
+        {t("focus.title")}
       </p>
       <h1 className="mt-4 max-w-xl text-2xl font-semibold leading-snug sm:text-3xl">
         {task.title}
@@ -50,30 +52,30 @@ export function FocusTimer({ task }: { task: Task }) {
 
       {phase === "completed" ? (
         <p className="mt-6 text-sm text-muted-foreground">
-          Session saved. Returning to today…
+          {t("focus.sessionSaved")}
         </p>
       ) : (
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           {phase === "running" ? (
             <Button variant="outline" size="lg" onClick={pause}>
-              <Pause className="size-4" /> Pause
+              <Pause className="size-4" /> {t("common.pause")}
             </Button>
           ) : (
             <Button variant="outline" size="lg" onClick={resume}>
-              <Play className="size-4" /> Resume
+              <Play className="size-4" /> {t("common.resume")}
             </Button>
           )}
           <Button size="lg" onClick={complete}>
-            <Check className="size-4" /> Complete
+            <Check className="size-4" /> {t("common.complete")}
           </Button>
           <Button variant="ghost" size="lg" onClick={() => router.push("/app/today")}>
-            <X className="size-4" /> Exit
+            <X className="size-4" /> {t("common.exit")}
           </Button>
         </div>
       )}
 
       <p className="mt-8 text-xs text-muted-foreground">
-        Space — pause / resume · Esc — exit
+        {t("focus.shortcutHint")}
       </p>
     </div>
   );

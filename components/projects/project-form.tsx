@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { Project } from "@/lib/types";
 
 export function ProjectForm({
@@ -45,6 +46,7 @@ export function ProjectForm({
   project?: Project;
   trigger: ReactNode;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [limitError, setLimitError] = useState(false);
@@ -77,15 +79,15 @@ export function ProjectForm({
       if (res?.error) {
         if (res.limit) {
           setLimitError(true);
-          toast.error(res.error);
+          toast.error(t(res.error));
         } else {
-          toast.error(res.error);
+          toast.error(t(res.error));
         }
         return;
       }
       setOpen(false);
       form.reset();
-      toast.success(project ? "Project updated ✓" : "Project created ✓");
+      toast.success(project ? t("toasts.projectUpdated") : t("toasts.projectCreated"));
     });
   };
 
@@ -97,12 +99,12 @@ export function ProjectForm({
     startTransition(async () => {
       const res = await forceCreateProjectAction(fd);
       if (res?.error) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
       setOpen(false);
       form.reset();
-      toast.success("Project created ✓");
+      toast.success(t("toasts.projectCreated"));
     });
   };
 
@@ -111,28 +113,30 @@ export function ProjectForm({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{project ? "Edit project" : "New project"}</DialogTitle>
+          <DialogTitle>
+            {project ? t("projects.editProjectTitle") : t("projects.newProjectTitle")}
+          </DialogTitle>
           <DialogDescription>
-            Group related tasks under one focus.
+            {t("projects.formDescription")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Title</label>
+            <label className="text-sm font-medium">{t("projects.titleLabel")}</label>
             <Input {...form.register("title")} />
             {form.formState.errors.title && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.title.message}
+                {t(form.formState.errors.title.message ?? "")}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Description</label>
+            <label className="text-sm font-medium">{t("projects.descriptionLabel")}</label>
             <Textarea rows={3} {...form.register("description")} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
+              <label className="text-sm font-medium">{t("projects.category")}</label>
               <Select
                 value={form.watch("category")}
                 onValueChange={(v) =>
@@ -153,7 +157,7 @@ export function ProjectForm({
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">{t("projects.status")}</label>
               <Select
                 value={form.watch("status")}
                 onValueChange={(v) =>
@@ -180,20 +184,19 @@ export function ProjectForm({
               className="flex-1"
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" className="flex-1" disabled={pending}>
-              {pending ? "Saving…" : project ? "Save" : "Create"}
+              {pending ? t("common.saving") : project ? t("common.save") : t("common.create")}
             </Button>
           </div>
           {limitError && (
             <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs text-foreground">
               <p className="font-medium">
-                You already have 3 active projects.
+                {t("projects.limitWarning")}
               </p>
               <p className="mt-1 text-muted-foreground">
-                To keep focus, park one first. Or continue anyway — you can
-                always simplify later.
+                {t("projects.limitHint")}
               </p>
               <Button
                 type="button"
@@ -203,7 +206,7 @@ export function ProjectForm({
                 onClick={forceCreate}
                 disabled={pending}
               >
-                Keep current & create
+                {t("projects.forceCreate")}
               </Button>
             </div>
           )}

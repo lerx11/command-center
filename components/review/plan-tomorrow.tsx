@@ -12,15 +12,17 @@ import {
   TASK_TYPE_META,
 } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { Task } from "@/lib/types";
 
 const SLOTS = [
-  { key: "big_win", label: "🎯 ONE BIG WIN" },
-  { key: "money", label: "💰 MONEY" },
-  { key: "asset", label: "🏗️ ASSET" },
-];
+  { key: "big_win", labelKey: "today.oneBigWin" },
+  { key: "money", labelKey: "today.money" },
+  { key: "asset", labelKey: "today.asset" },
+] as const;
 
 export function PlanTomorrow({ candidates }: { candidates: Task[] }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -28,10 +30,10 @@ export function PlanTomorrow({ candidates }: { candidates: Task[] }) {
     startTransition(async () => {
       const res = await planTomorrowAction(fd);
       if (res?.error) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
-      toast.success("Tomorrow planned ✓");
+      toast.success(t("toasts.tomorrowPlanned"));
       router.push("/app/today");
     });
   };
@@ -45,17 +47,17 @@ export function PlanTomorrow({ candidates }: { candidates: Task[] }) {
         {SLOTS.map((slot) => (
           <div key={slot.key} className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {slot.label}
+              {t(slot.labelKey)}
             </label>
             <select
               name={slot.key}
               defaultValue="none"
               className={cn(selectClass)}
             >
-              <option value="none">— None —</option>
-              {candidates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {TASK_TYPE_META[t.type].emoji} {t.title}
+              <option value="none">{t("common.none")}</option>
+              {candidates.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {TASK_TYPE_META[task.type].emoji} {task.title}
                 </option>
               ))}
             </select>
@@ -65,7 +67,7 @@ export function PlanTomorrow({ candidates }: { candidates: Task[] }) {
 
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          ⚡ Energy ×3
+          {t("review.energyX3")}
         </p>
         <div className="grid gap-2 sm:grid-cols-3">
           {ENERGY_CATEGORIES.map((cat) => {
@@ -88,7 +90,7 @@ export function PlanTomorrow({ candidates }: { candidates: Task[] }) {
       </div>
 
       <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-        {pending ? "Planning…" : "Plan tomorrow"}
+        {pending ? t("review.planning") : t("review.planTomorrow")}
       </Button>
     </form>
   );

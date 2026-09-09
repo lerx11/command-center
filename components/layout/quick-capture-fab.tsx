@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/components/i18n/i18n-provider";
 import { quickCaptureAction } from "@/app/app/parking/actions";
 
 export function QuickCaptureFab() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [pending, startTransition] = useTransition();
@@ -29,12 +31,12 @@ export function QuickCaptureFab() {
     startTransition(async () => {
       const res = await quickCaptureAction(fd);
       if (res?.error) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
       setValue("");
       setOpen(false);
-      toast.success("Saved to Parking Lot ✓");
+      toast.success(t("toasts.savedToParking"));
     });
   };
 
@@ -42,7 +44,7 @@ export function QuickCaptureFab() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          aria-label="New idea"
+          aria-label={t("parking.newIdea")}
           className="fixed bottom-20 right-5 z-50 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95 md:bottom-6 md:size-14"
         >
           <Plus className="size-6" />
@@ -50,9 +52,9 @@ export function QuickCaptureFab() {
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Parking Lot</DialogTitle>
+          <DialogTitle>{t("parking.dialogTitle")}</DialogTitle>
           <DialogDescription>
-            What came to mind? It won&apos;t become a task until you decide.
+            {t("parking.dialogDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -60,7 +62,7 @@ export function QuickCaptureFab() {
             autoFocus
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Idea…"
+            placeholder={t("parking.placeholder")}
             rows={3}
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -70,7 +72,7 @@ export function QuickCaptureFab() {
             }}
           />
           <Button onClick={save} disabled={pending || !value.trim()} className="w-full">
-            {pending ? "Saving…" : "Save idea"}
+            {pending ? t("common.saving") : t("parking.saveIdea")}
           </Button>
         </div>
       </DialogContent>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { I18nProvider } from "@/components/i18n/i18n-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -44,11 +45,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="ru" suppressHydrationWarning className={inter.variable}>
       <body className={`${jetbrainsMono.variable} font-sans antialiased`}>
         <ThemeProvider>
-          {children}
-          <Toaster position="bottom-center" />
+          <I18nProvider>
+            {children}
+            <Toaster position="bottom-center" />
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

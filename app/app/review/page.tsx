@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { todayISO } from "@/lib/utils";
+import { getT } from "@/lib/i18n";
 import { ReviewForm } from "@/components/review/review-form";
 import { WhatToMove } from "@/components/review/what-to-move";
 import { PlanTomorrow } from "@/components/review/plan-tomorrow";
@@ -10,6 +11,7 @@ import type { DailyReview, Project, Task } from "@/lib/types";
 
 export default async function ReviewPage() {
   const supabase = await createClient();
+  const { t } = await getT();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -69,34 +71,34 @@ export default async function ReviewPage() {
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Day Review</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("review.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Close the loop before planning tomorrow.
+          {t("review.description")}
         </p>
       </header>
 
       {/* Done today */}
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-          Done today
+          {t("review.doneToday")}
         </h2>
         {doneTasks.length === 0 ? (
           <EmptyState
-            title="No completed tasks today."
-            description="Mark a task as done to see it here."
+            title={t("review.noCompleted")}
+            description={t("review.noCompletedHint")}
           />
         ) : (
           <div className="space-y-2">
-            {doneTasks.map((t) => (
+            {doneTasks.map((tsk) => (
               <div
-                key={t.id}
+                key={tsk.id}
                 className="flex items-center gap-3 rounded-lg border border-border/50 bg-card px-3 py-2.5"
               >
                 <p className="min-w-0 flex-1 truncate text-sm line-through text-muted-foreground">
-                  {t.title}
+                  {tsk.title}
                 </p>
                 <Badge variant="secondary" className="text-[10px]">
-                  {TASK_TYPE_META[t.type].emoji} {TASK_TYPE_META[t.type].short}
+                  {TASK_TYPE_META[tsk.type].emoji} {TASK_TYPE_META[tsk.type].short}
                 </Badge>
               </div>
             ))}
@@ -107,7 +109,7 @@ export default async function ReviewPage() {
       {/* Reflections */}
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-          Reflect
+          {t("review.reflect")}
         </h2>
         <ReviewForm date={date} review={review} />
       </section>
@@ -115,7 +117,7 @@ export default async function ReviewPage() {
       {/* What to move */}
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-          What to move?
+          {t("review.whatToMove")}
         </h2>
         <WhatToMove unfinished={unfinishedTasks} projects={projects} />
       </section>
@@ -123,7 +125,7 @@ export default async function ReviewPage() {
       {/* Plan tomorrow */}
       <section className="space-y-3 rounded-xl border border-border/60 bg-card p-5">
         <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-          Tomorrow
+          {t("review.tomorrow")}
         </h2>
         <PlanTomorrow candidates={candidates} />
       </section>

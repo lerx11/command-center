@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { upsertReviewAction } from "@/app/app/review/actions";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { DailyReview } from "@/lib/types";
 
 export function ReviewForm({
@@ -15,13 +16,14 @@ export function ReviewForm({
   date: string;
   review: DailyReview | null;
 }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   const save = (fd: FormData) => {
     startTransition(async () => {
       const res = await upsertReviewAction(fd);
-      if (res?.error) toast.error(res.error);
-      else toast.success("Review saved ✓");
+      if (res?.error) toast.error(t(res.error));
+      else toast.success(t("toasts.reviewSaved"));
     });
   };
 
@@ -29,9 +31,9 @@ export function ReviewForm({
     <form action={save} className="space-y-4">
       <input type="hidden" name="date" value={date} />
       <div className="space-y-2">
-        <label className="text-sm font-medium">💰 Money moved</label>
+        <label className="text-sm font-medium">{t("review.moneyMoved")}</label>
         <p className="text-xs text-muted-foreground">
-          How much money did you move closer today?
+          {t("review.moneyMovedHint")}
         </p>
         <Input
           type="number"
@@ -42,34 +44,34 @@ export function ReviewForm({
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium">What worked?</label>
+        <label className="text-sm font-medium">{t("review.whatWorked")}</label>
         <Textarea
           name="what_worked"
           defaultValue={review?.what_worked ?? ""}
           rows={2}
-          placeholder="What moved you forward…"
+          placeholder={t("review.whatWorkedPlaceholder")}
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium">What distracted?</label>
+        <label className="text-sm font-medium">{t("review.whatDistracted")}</label>
         <Textarea
           name="what_distracted"
           defaultValue={review?.what_distracted ?? ""}
           rows={2}
-          placeholder="What pulled you off focus…"
+          placeholder={t("review.whatDistractedPlaceholder")}
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium">Notes</label>
+        <label className="text-sm font-medium">{t("review.notes")}</label>
         <Textarea
           name="notes"
           defaultValue={review?.notes ?? ""}
           rows={2}
-          placeholder="Anything else…"
+          placeholder={t("review.notesPlaceholder")}
         />
       </div>
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Save review"}
+        {pending ? t("common.saving") : t("review.saveReview")}
       </Button>
     </form>
   );

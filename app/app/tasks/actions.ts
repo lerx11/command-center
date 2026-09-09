@@ -15,7 +15,7 @@ async function getUser() {
 
 export async function createTaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const parsed = taskSchema.safeParse({
     title: formData.get("title"),
@@ -27,7 +27,7 @@ export async function createTaskAction(formData: FormData) {
     due_date: formData.get("due_date") || null,
   });
   if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
 
   const { error } = await supabase.from("tasks").insert({
     user_id: user.id,
@@ -36,7 +36,7 @@ export async function createTaskAction(formData: FormData) {
     project_id: parsed.data.project_id ?? null,
     due_date: parsed.data.due_date || null,
   });
-  if (error) return { error: "Could not create the task." };
+  if (error) return { error: "errors.couldNotCreateTask" };
 
   revalidatePath("/app/today");
   revalidatePath("/app/projects");
@@ -45,7 +45,7 @@ export async function createTaskAction(formData: FormData) {
 
 export async function updateTaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const parsed = taskSchema.safeParse({
@@ -58,7 +58,7 @@ export async function updateTaskAction(formData: FormData) {
     due_date: formData.get("due_date") || null,
   });
   if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
 
   const { error } = await supabase
     .from("tasks")
@@ -70,7 +70,7 @@ export async function updateTaskAction(formData: FormData) {
     })
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not update the task." };
+  if (error) return { error: "errors.couldNotUpdateTask" };
 
   revalidatePath("/app/today");
   revalidatePath("/app/projects");
@@ -79,7 +79,7 @@ export async function updateTaskAction(formData: FormData) {
 
 export async function deleteTaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const { error } = await supabase
@@ -87,7 +87,7 @@ export async function deleteTaskAction(formData: FormData) {
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not delete the task." };
+  if (error) return { error: "errors.couldNotDeleteTask" };
 
   revalidatePath("/app/today");
   revalidatePath("/app/projects");
@@ -96,7 +96,7 @@ export async function deleteTaskAction(formData: FormData) {
 
 export async function setTaskStatusAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const status = String(formData.get("status")) as
@@ -114,7 +114,7 @@ export async function setTaskStatusAction(formData: FormData) {
     .update(patch)
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not update the task." };
+  if (error) return { error: "errors.couldNotUpdateTask" };
 
   revalidatePath("/app/today");
   revalidatePath("/app/projects");
@@ -131,7 +131,7 @@ export async function parkTaskAction(formData: FormData) {
 
 export async function moveTaskToTomorrowAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const tomorrow = addDays(todayISO(), 1);
@@ -140,7 +140,7 @@ export async function moveTaskToTomorrowAction(formData: FormData) {
     .update({ due_date: tomorrow, status: "TODO" })
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not move the task." };
+  if (error) return { error: "errors.couldNotMoveTask" };
 
   revalidatePath("/app/today");
   revalidatePath("/app/review");
@@ -150,7 +150,7 @@ export async function moveTaskToTomorrowAction(formData: FormData) {
 // Link a task to today's daily plan as the big win / money / asset slot.
 export async function setDailyPlanTaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const taskId = String(formData.get("taskId"));
   const slot = String(formData.get("slot")); // big_win | money | asset
@@ -162,7 +162,7 @@ export async function setDailyPlanTaskAction(formData: FormData) {
     asset: "asset_task_id",
   };
   const field = fieldMap[slot];
-  if (!field) return { error: "Unknown slot." };
+  if (!field) return { error: "errors.unknownSlot" };
 
   // Ensure a plan exists for today.
   const { data: plan } = await supabase
@@ -179,7 +179,7 @@ export async function setDailyPlanTaskAction(formData: FormData) {
       .insert({ user_id: user.id, date })
       .select("id")
       .single();
-    if (error || !np) return { error: "Could not prepare today's plan." };
+    if (error || !np) return { error: "errors.couldNotPreparePlan" };
     planId = np.id;
   }
 
@@ -205,7 +205,7 @@ export async function setDailyPlanTaskAction(formData: FormData) {
     .from("daily_plans")
     .update({ [field]: taskId })
     .eq("id", planId);
-  if (error) return { error: "Could not set today's task." };
+  if (error) return { error: "errors.couldNotSetTask" };
 
   // Mark the chosen task as IN_PROGRESS (it is now today's focus candidate).
   await supabase
@@ -220,7 +220,7 @@ export async function setDailyPlanTaskAction(formData: FormData) {
 
 export async function clearDailyPlanSlotAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const slot = String(formData.get("slot")); // big_win | money | asset
   const fieldMap: Record<string, string> = {
@@ -229,7 +229,7 @@ export async function clearDailyPlanSlotAction(formData: FormData) {
     asset: "asset_task_id",
   };
   const field = fieldMap[slot];
-  if (!field) return { error: "Unknown slot." };
+  if (!field) return { error: "errors.unknownSlot" };
 
   const { data: plan } = await supabase
     .from("daily_plans")
@@ -250,7 +250,7 @@ export async function clearDailyPlanSlotAction(formData: FormData) {
     .from("daily_plans")
     .update({ [field]: null })
     .eq("id", planRow.id);
-  if (error) return { error: "Could not clear the slot." };
+  if (error) return { error: "errors.couldNotClearSlot" };
 
   revalidatePath("/app/today");
   return { success: true as const };
@@ -259,14 +259,14 @@ export async function clearDailyPlanSlotAction(formData: FormData) {
 // Energy tasks
 export async function createEnergyTaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const parsed = energyTaskSchema.safeParse({
     category: formData.get("category"),
     title: formData.get("title"),
   });
   if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
 
   // Ensure today's plan exists (energy tasks attach to it).
   const date = todayISO();
@@ -283,7 +283,7 @@ export async function createEnergyTaskAction(formData: FormData) {
       .insert({ user_id: user.id, date })
       .select("id")
       .single();
-    if (error || !np) return { error: "Could not prepare today's plan." };
+    if (error || !np) return { error: "errors.couldNotPreparePlan" };
     planId = np.id;
   }
 
@@ -294,7 +294,7 @@ export async function createEnergyTaskAction(formData: FormData) {
     title: parsed.data.title,
     completed: false,
   });
-  if (error) return { error: "Could not create energy task." };
+  if (error) return { error: "errors.couldNotCreateEnergyTask" };
 
   revalidatePath("/app/today");
   return { success: true as const };
@@ -302,7 +302,7 @@ export async function createEnergyTaskAction(formData: FormData) {
 
 export async function toggleEnergyTaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const completed = formData.get("completed") === "true";
@@ -312,7 +312,7 @@ export async function toggleEnergyTaskAction(formData: FormData) {
     .update({ completed: !completed })
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not update energy task." };
+  if (error) return { error: "errors.couldNotUpdateEnergyTask" };
 
   revalidatePath("/app/today");
   return { success: true as const };
@@ -320,7 +320,7 @@ export async function toggleEnergyTaskAction(formData: FormData) {
 
 export async function deleteEnergyTaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const id = String(formData.get("id"));
   const { error } = await supabase
@@ -328,7 +328,7 @@ export async function deleteEnergyTaskAction(formData: FormData) {
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { error: "Could not delete energy task." };
+  if (error) return { error: "errors.couldNotDeleteEnergyTask" };
 
   revalidatePath("/app/today");
   return { success: true as const };
@@ -337,7 +337,7 @@ export async function deleteEnergyTaskAction(formData: FormData) {
 // Focus session persistence
 export async function saveFocusSessionAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const taskId = String(formData.get("taskId") || "null");
   const startedAt = String(formData.get("startedAt"));
@@ -350,7 +350,7 @@ export async function saveFocusSessionAction(formData: FormData) {
     ended_at: new Date().toISOString(),
     duration_seconds: Math.max(0, Math.floor(durationSeconds)),
   });
-  if (error) return { error: "Could not save focus session." };
+  if (error) return { error: "errors.couldNotSaveFocusSession" };
 
   revalidatePath("/app/dashboard");
   return { success: true as const };

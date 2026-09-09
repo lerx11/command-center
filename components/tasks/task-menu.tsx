@@ -16,6 +16,7 @@ import {
   parkTaskAction,
 } from "@/app/app/tasks/actions";
 import { TaskForm } from "./task-form";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { Project, Task } from "@/lib/types";
 
 export function TaskMenu({
@@ -27,6 +28,7 @@ export function TaskMenu({
   projects: Project[];
   withEditButton?: boolean;
 }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   const park = () => {
@@ -35,8 +37,8 @@ export function TaskMenu({
     fd.set("status", "PARKED");
     startTransition(async () => {
       const res = await parkTaskAction(fd);
-      if (res?.error) toast.error(res.error);
-      else toast.success("Moved to Parking ✓");
+      if (res?.error) toast.error(t(res.error));
+      else toast.success(t("toasts.movedToParking"));
     });
   };
 
@@ -45,8 +47,8 @@ export function TaskMenu({
     fd.set("id", task.id);
     startTransition(async () => {
       const res = await deleteTaskAction(fd);
-      if (res?.error) toast.error(res.error);
-      else toast.success("Deleted ✓");
+      if (res?.error) toast.error(t(res.error));
+      else toast.success(t("toasts.deleted"));
     });
   };
 
@@ -56,7 +58,7 @@ export function TaskMenu({
       size="sm"
       className="text-xs text-muted-foreground hover:text-foreground"
     >
-      Edit
+      {t("common.edit")}
     </Button>
   );
 
@@ -72,7 +74,7 @@ export function TaskMenu({
             size="icon"
             className="size-8"
             disabled={pending}
-            aria-label="Task actions"
+            aria-label={t("taskMenu.actions")}
           >
             <MoreHorizontal className="size-4" />
           </Button>
@@ -82,7 +84,7 @@ export function TaskMenu({
             <>
               <DropdownMenuItem onClick={park}>
                 <ParkingSquare className="size-4" />
-                Park
+                {t("common.park")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
@@ -90,7 +92,7 @@ export function TaskMenu({
           {!withEditButton && (
             <DropdownMenuItem onClick={park}>
               <ParkingSquare className="size-4" />
-              Park
+              {t("common.park")}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
@@ -98,7 +100,7 @@ export function TaskMenu({
             className="text-destructive focus:text-destructive"
           >
             <Trash2 className="size-4" />
-            Delete
+            {t("common.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

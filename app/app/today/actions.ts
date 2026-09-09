@@ -19,7 +19,7 @@ function currentPeriod() {
 
 export async function upsertCashTargetAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const period = currentPeriod();
   const min = Number(formData.get("min_target") || 0);
@@ -42,7 +42,7 @@ export async function upsertCashTargetAction(formData: FormData) {
       },
       { onConflict: "user_id, period" }
     );
-  if (error) return { error: "Could not save cash target." };
+  if (error) return { error: "errors.couldNotSaveCashTarget" };
 
   revalidatePath("/app/today");
   return { success: true as const };
@@ -51,11 +51,11 @@ export async function upsertCashTargetAction(formData: FormData) {
 // Create a quick one-line energy task for today.
 export async function quickEnergyCreateAction(formData: FormData) {
   const { supabase, user } = await getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return { error: "errors.notAuthenticated" };
 
   const category = String(formData.get("category")) as "BODY" | "MIND" | "RECOVERY";
   const title = String(formData.get("title") || "").trim();
-  if (!title) return { error: "Title required" };
+  if (!title) return { error: "errors.titleRequired" };
 
   const date = todayISO();
   const { data: plan } = await supabase
@@ -71,7 +71,7 @@ export async function quickEnergyCreateAction(formData: FormData) {
       .insert({ user_id: user.id, date })
       .select("id")
       .single();
-    if (error || !np) return { error: "Could not prepare today's plan." };
+    if (error || !np) return { error: "errors.couldNotPreparePlan" };
     planId = np.id;
   }
 
@@ -82,7 +82,7 @@ export async function quickEnergyCreateAction(formData: FormData) {
     title,
     completed: false,
   });
-  if (error) return { error: "Could not add energy task." };
+  if (error) return { error: "errors.couldNotAddEnergyTask" };
 
   revalidatePath("/app/today");
   return { success: true as const };

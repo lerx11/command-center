@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { Project, Task } from "@/lib/types";
 
 export function TaskForm({
@@ -47,6 +48,7 @@ export function TaskForm({
   defaultProjectId?: string | null;
   onCreated?: (taskId: string) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -84,12 +86,12 @@ export function TaskForm({
         ? await updateTaskAction(fd)
         : await createTaskAction(fd);
       if (res?.error) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
       setOpen(false);
       form.reset();
-      toast.success(task ? "Task updated ✓" : "Task created ✓");
+      toast.success(task ? t("toasts.taskUpdated") : t("toasts.taskCreated"));
       if (!task) {
         // Best-effort: caller can route to today/project/park.
         onCreated?.("");
@@ -105,26 +107,26 @@ export function TaskForm({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{task ? "Edit task" : "New task"}</DialogTitle>
-          <DialogDescription>Keep it small and finishable.</DialogDescription>
+          <DialogTitle>{task ? t("taskForm.editTask") : t("taskForm.newTask")}</DialogTitle>
+          <DialogDescription>{t("taskForm.description")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Title</label>
+            <label className="text-sm font-medium">{t("taskForm.titleLabel")}</label>
             <Input autoFocus {...form.register("title")} />
             {form.formState.errors.title && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.title.message}
+                {t(form.formState.errors.title.message ?? "")}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Description (optional)</label>
+            <label className="text-sm font-medium">{t("taskForm.descriptionLabel")}</label>
             <Textarea rows={2} {...form.register("description")} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Project</label>
+              <label className="text-sm font-medium">{t("taskForm.projectLabel")}</label>
               <Select
                 value={watchProject ?? "none"}
                 onValueChange={(v) =>
@@ -132,10 +134,10 @@ export function TaskForm({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="No project" />
+                  <SelectValue placeholder={t("taskForm.placeholderNoProject")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No project</SelectItem>
+                  <SelectItem value="none">{t("common.noProject")}</SelectItem>
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.title}
@@ -145,7 +147,7 @@ export function TaskForm({
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Type</label>
+              <label className="text-sm font-medium">{t("taskForm.typeLabel")}</label>
               <Select
                 value={watchType}
                 onValueChange={(v) =>
@@ -156,16 +158,16 @@ export function TaskForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TASK_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {TASK_TYPE_META[t].emoji} {TASK_TYPE_META[t].label}
+                  {TASK_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {TASK_TYPE_META[type].emoji} {TASK_TYPE_META[type].label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Priority</label>
+              <label className="text-sm font-medium">{t("taskForm.priorityLabel")}</label>
               <Select
                 value={form.watch("priority")}
                 onValueChange={(v) =>
@@ -185,7 +187,7 @@ export function TaskForm({
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Due date</label>
+              <label className="text-sm font-medium">{t("taskForm.dueDateLabel")}</label>
               <Input
                 type="date"
                 value={form.watch("due_date") ?? ""}
@@ -202,10 +204,10 @@ export function TaskForm({
               className="flex-1"
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" className="flex-1" disabled={pending}>
-              {pending ? "Saving…" : task ? "Save" : "Create"}
+              {pending ? t("common.saving") : task ? t("common.save") : t("common.create")}
             </Button>
           </div>
         </form>

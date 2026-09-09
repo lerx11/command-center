@@ -18,8 +18,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useT } from "@/components/i18n/i18n-provider";
 
 function LoginForm() {
+  const t = useT();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? undefined;
   const [pending, startTransition] = useTransition();
@@ -37,21 +39,21 @@ function LoginForm() {
 
     startTransition(async () => {
       const res = await loginAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
     });
   };
 
   return (
     <Card className="border-border/60 shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>Sign in to your command center.</CardDescription>
+        <CardTitle className="text-2xl">{t("auth.welcomeBack")}</CardTitle>
+        <CardDescription>{t("auth.signInDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              Email
+              {t("auth.email")}
             </label>
             <Input
               id="email"
@@ -61,20 +63,20 @@ function LoginForm() {
             />
             {form.formState.errors.email && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.email.message}
+                {t(form.formState.errors.email.message ?? "")}
               </p>
             )}
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t("auth.password")}
               </label>
               <Link
                 href="/forgot-password"
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                Forgot?
+                {t("auth.forgot")}
               </Link>
             </div>
             <Input
@@ -85,20 +87,20 @@ function LoginForm() {
             />
             {form.formState.errors.password && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.password.message}
+                {t(form.formState.errors.password.message ?? "")}
               </p>
             )}
           </div>
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Signing in…" : "Sign in"}
+            {pending ? t("auth.signingIn") : t("auth.signIn")}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
-          No account?{" "}
+          {t("auth.noAccount")}{" "}
           <Link href="/register" className="font-medium text-foreground hover:underline">
-            Create one
+            {t("auth.createOne")}
           </Link>
         </p>
       </CardFooter>

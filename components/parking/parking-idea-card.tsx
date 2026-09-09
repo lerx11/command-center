@@ -15,7 +15,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -33,6 +32,7 @@ import {
   assignParkingToProjectAction,
 } from "@/app/app/parking/actions";
 import { formatDate } from "@/lib/utils";
+import { useI18n, useT } from "@/components/i18n/i18n-provider";
 import type { Project, ParkingIdea } from "@/lib/types";
 
 export function ParkingIdeaCard({
@@ -42,6 +42,8 @@ export function ParkingIdeaCard({
   idea: ParkingIdea;
   projects: Project[];
 }) {
+  const t = useT();
+  const { locale } = useI18n();
   const [pending, startTransition] = useTransition();
   const [convertOpen, setConvertOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -58,9 +60,9 @@ export function ParkingIdeaCard({
     fd.set("projectId", convertProject);
     startTransition(async () => {
       const res = await moveParkingIdeaAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
       else {
-        toast.success("Converted ✓");
+        toast.success(t("toasts.converted"));
         setConvertOpen(false);
       }
     });
@@ -72,9 +74,9 @@ export function ParkingIdeaCard({
     fd.set("projectId", moveProject);
     startTransition(async () => {
       const res = await assignParkingToProjectAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
       else {
-        toast.success("Moved ✓");
+        toast.success(t("toasts.moved"));
         setMoveOpen(false);
       }
     });
@@ -85,8 +87,8 @@ export function ParkingIdeaCard({
     fd.set("id", idea.id);
     startTransition(async () => {
       const res = await deleteParkingIdeaAction(fd);
-      if (res?.error) toast.error(res.error);
-      else toast.success("Deleted ✓");
+      if (res?.error) toast.error(t(res.error));
+      else toast.success(t("toasts.deleted"));
     });
   };
 
@@ -112,7 +114,7 @@ export function ParkingIdeaCard({
               </span>
             )}
             <span className="text-xs text-muted-foreground">
-              {formatDate(idea.created_at)}
+              {formatDate(idea.created_at, locale)}
             </span>
           </div>
         </div>
@@ -124,28 +126,28 @@ export function ParkingIdeaCard({
             disabled={pending}
             onClick={() => setConvertOpen(true)}
           >
-            <ArrowRightLeft className="size-3.5" /> Convert
+            <ArrowRightLeft className="size-3.5" /> {t("common.convert")}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                 disabled={pending}
-                aria-label="Idea actions"
+                aria-label={t("parking.ideaActions")}
               >
                 <MoreHorizontal className="size-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setMoveOpen(true)}>
-                Move to project
+                {t("parking.moveToProject")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={del}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="size-4" /> Delete
+                <Trash2 className="size-4" /> {t("common.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -156,9 +158,9 @@ export function ParkingIdeaCard({
       <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Convert to task</DialogTitle>
+            <DialogTitle>{t("parking.convertTitle")}</DialogTitle>
             <DialogDescription>
-              Where should this idea go?
+              {t("parking.convertDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -167,18 +169,18 @@ export function ParkingIdeaCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="TODAY">Today</SelectItem>
-                <SelectItem value="PROJECT">Project</SelectItem>
-                <SelectItem value="LATER">Later (mark converted)</SelectItem>
+                <SelectItem value="TODAY">{t("parking.convertToday")}</SelectItem>
+                <SelectItem value="PROJECT">{t("parking.convertProject")}</SelectItem>
+                <SelectItem value="LATER">{t("parking.convertLater")}</SelectItem>
               </SelectContent>
             </Select>
             {convertTarget !== "LATER" && (
               <Select value={convertProject} onValueChange={setConvertProject}>
                 <SelectTrigger>
-                  <SelectValue placeholder="No project" />
+                  <SelectValue placeholder={t("taskForm.placeholderNoProject")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No project</SelectItem>
+                  <SelectItem value="none">{t("common.noProject")}</SelectItem>
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.title}
@@ -188,7 +190,7 @@ export function ParkingIdeaCard({
               </Select>
             )}
             <Button onClick={convert} disabled={pending} className="w-full">
-              {pending ? "Converting…" : "Convert"}
+              {pending ? t("common.converting") : t("common.convert")}
             </Button>
           </div>
         </DialogContent>
@@ -198,18 +200,18 @@ export function ParkingIdeaCard({
       <Dialog open={moveOpen} onOpenChange={setMoveOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Move to project</DialogTitle>
+            <DialogTitle>{t("parking.moveToProject")}</DialogTitle>
             <DialogDescription>
-              Attach this idea to a project without converting it.
+              {t("parking.moveDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <Select value={moveProject} onValueChange={setMoveProject}>
               <SelectTrigger>
-                <SelectValue placeholder="No project" />
+                <SelectValue placeholder={t("taskForm.placeholderNoProject")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No project</SelectItem>
+                <SelectItem value="none">{t("common.noProject")}</SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.title}
@@ -218,7 +220,7 @@ export function ParkingIdeaCard({
               </SelectContent>
             </Select>
             <Button onClick={move} disabled={pending} className="w-full">
-              {pending ? "Moving…" : "Move"}
+              {pending ? t("common.moving") : t("common.move")}
             </Button>
           </div>
         </DialogContent>

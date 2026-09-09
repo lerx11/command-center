@@ -1,11 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
 import { todayISO, formatDuration, formatMoney } from "@/lib/utils";
+import { getT } from "@/lib/i18n";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Crosshair, Coins, CheckCircle2, Timer, Wallet } from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const { t, locale } = await getT();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -97,34 +99,34 @@ export default async function DashboardPage() {
 
   const metrics = [
     {
-      label: "Big Wins",
+      label: t("dashboard.bigWins"),
       icon: Crosshair,
       today: bigWinsToday,
       week: bigWinsWeek,
     },
     {
-      label: "Money actions",
+      label: t("dashboard.moneyActions"),
       icon: Coins,
       today: moneyToday,
       week: moneyWeek,
     },
     {
-      label: "Tasks done",
+      label: t("dashboard.tasksDone"),
       icon: CheckCircle2,
       today: tasksToday,
       week: tasksWeek,
     },
     {
-      label: "Focus time",
+      label: t("dashboard.focusTime"),
       icon: Timer,
       today: formatDuration(todayFocusSeconds),
       week: formatDuration(weekFocusSeconds),
     },
     {
-      label: "Money moved",
+      label: t("dashboard.moneyMoved"),
       icon: Wallet,
-      today: formatMoney(todayMoney),
-      week: formatMoney(weekMoney),
+      today: formatMoney(todayMoney, locale),
+      week: formatMoney(weekMoney, locale),
     },
   ];
 
@@ -136,10 +138,10 @@ export default async function DashboardPage() {
   ) {
     return (
       <div className="space-y-8">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h1>
         <EmptyState
-          title="No activity yet this week."
-          description="Complete a task or run a focus session to see your progress here."
+          title={t("dashboard.empty")}
+          description={t("dashboard.emptyHint")}
         />
       </div>
     );
@@ -147,7 +149,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h1>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map((m) => {
@@ -164,7 +166,7 @@ export default async function DashboardPage() {
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Today
+                      {t("dashboard.today")}
                     </p>
                     <p className="mt-0.5 text-xl font-semibold tabular">
                       {m.today}
@@ -172,7 +174,7 @@ export default async function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      This week
+                      {t("dashboard.thisWeek")}
                     </p>
                     <p className="mt-0.5 text-xl font-semibold tabular">
                       {m.week}

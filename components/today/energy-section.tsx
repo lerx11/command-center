@@ -15,6 +15,7 @@ import {
   deleteEnergyTaskAction,
 } from "@/app/app/tasks/actions";
 import { quickEnergyCreateAction } from "@/app/app/today/actions";
+import { useT } from "@/components/i18n/i18n-provider";
 import type { EnergyTask } from "@/lib/types";
 
 export function EnergySection({
@@ -22,17 +23,18 @@ export function EnergySection({
 }: {
   energyTasks: EnergyTask[];
 }) {
+  const t = useT();
   return (
     <div className="rounded-xl border border-border/60 bg-card p-5">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        ⚡ Energy
+        ⚡ {t("today.energy")}
       </p>
       <div className="grid gap-3 sm:grid-cols-3">
         {ENERGY_CATEGORIES.map((cat) => (
           <EnergyColumn
             key={cat}
             category={cat}
-            tasks={energyTasks.filter((t) => t.category === cat)}
+            tasks={energyTasks.filter((task) => task.category === cat)}
           />
         ))}
       </div>
@@ -47,6 +49,7 @@ function EnergyColumn({
   category: EnergyCategory;
   tasks: EnergyTask[];
 }) {
+  const t = useT();
   const meta = ENERGY_CATEGORY_META[category];
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
@@ -60,7 +63,7 @@ function EnergyColumn({
     startTransition(async () => {
       const res = await quickEnergyCreateAction(fd);
       if (res?.error) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
       setTitle("");
@@ -73,8 +76,8 @@ function EnergyColumn({
       <p className="text-xs font-semibold uppercase tracking-wider">
         {meta.emoji} {meta.label}
       </p>
-      {tasks.map((t) => (
-        <EnergyItem key={t.id} task={t} />
+      {tasks.map((task) => (
+        <EnergyItem key={task.id} task={task} />
       ))}
       {adding ? (
         <div className="flex items-center gap-1.5">
@@ -96,7 +99,7 @@ function EnergyColumn({
             variant="ghost"
             className="size-8"
             onClick={() => setAdding(false)}
-            aria-label="Cancel"
+            aria-label={t("common.cancel")}
           >
             <X className="size-3.5" />
           </Button>
@@ -106,7 +109,7 @@ function EnergyColumn({
           onClick={() => setAdding(true)}
           className="flex w-full items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
-          <Plus className="size-3" /> Add
+          <Plus className="size-3" /> {t("energy.add")}
         </button>
       )}
     </div>
@@ -114,6 +117,7 @@ function EnergyColumn({
 }
 
 function EnergyItem({ task }: { task: EnergyTask }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const toggle = () => {
     const fd = new FormData();
@@ -121,7 +125,7 @@ function EnergyItem({ task }: { task: EnergyTask }) {
     fd.set("completed", String(task.completed));
     startTransition(async () => {
       const res = await toggleEnergyTaskAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
     });
   };
   const del = () => {
@@ -129,7 +133,7 @@ function EnergyItem({ task }: { task: EnergyTask }) {
     fd.set("id", task.id);
     startTransition(async () => {
       const res = await deleteEnergyTaskAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
     });
   };
 
@@ -138,7 +142,7 @@ function EnergyItem({ task }: { task: EnergyTask }) {
       <button
         onClick={toggle}
         disabled={pending}
-        aria-label={task.completed ? "Mark not done" : "Mark done"}
+        aria-label={task.completed ? t("today.markNotDone") : t("today.markDone")}
         className="shrink-0"
       >
         <div
@@ -171,7 +175,7 @@ function EnergyItem({ task }: { task: EnergyTask }) {
       <button
         onClick={del}
         className="opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-        aria-label="Delete energy task"
+        aria-label={t("energy.delete")}
       >
         <X className="size-3.5" />
       </button>

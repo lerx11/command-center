@@ -12,26 +12,28 @@ import {
   Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/i18n-provider";
 
 const ITEMS = [
-  { href: "/app/today", label: "Today", icon: CalendarCheck },
-  { href: "/app/focus", label: "Focus", icon: Crosshair },
-  { href: "/app/projects", label: "Projects", icon: FolderKanban },
-  { href: "/app/parking", label: "Parking", icon: ParkingSquare },
-  { href: "/app/review", label: "Review", icon: ListChecks },
-  { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-];
+  { href: "/app/today", key: "nav.today", icon: CalendarCheck },
+  { href: "/app/focus", key: "nav.focus", icon: Crosshair },
+  { href: "/app/projects", key: "nav.projects", icon: FolderKanban },
+  { href: "/app/parking", key: "nav.parking", icon: ParkingSquare },
+  { href: "/app/review", key: "nav.review", icon: ListChecks },
+  { href: "/app/dashboard", key: "nav.dashboard", icon: LayoutDashboard },
+] as const;
 
 export function Sidebar({ profileName }: { profileName: string }) {
   const pathname = usePathname();
+  const t = useT();
 
   return (
     <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col border-r border-border/60 bg-card/40 md:flex">
       <div className="px-6 py-8">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-          Command
+          {t("brand.command")}
         </p>
-        <p className="text-lg font-bold uppercase tracking-tight">Center</p>
+        <p className="text-lg font-bold uppercase tracking-tight">{t("brand.center")}</p>
       </div>
 
       <nav className="flex-1 px-3">
@@ -52,7 +54,7 @@ export function Sidebar({ profileName }: { profileName: string }) {
                   )}
                 >
                   <Icon className="size-4" />
-                  {item.label}
+                  {t(item.key)}
                 </Link>
               </li>
             );
@@ -71,7 +73,7 @@ export function Sidebar({ profileName }: { profileName: string }) {
           )}
         >
           <SettingsIcon className="size-4" />
-          Settings
+          {t("nav.settings")}
         </Link>
         <p className="mt-3 truncate px-3 text-xs text-muted-foreground">
           {profileName}

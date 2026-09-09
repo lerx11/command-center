@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { getT } from "@/lib/i18n";
 import { TaskForm } from "@/components/tasks/task-form";
 import { TaskMenu } from "@/components/tasks/task-menu";
 import { ProjectForm } from "@/components/projects/project-form";
@@ -21,6 +22,7 @@ export default async function ProjectPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const { t } = await getT();
 
   const { data: project } = await supabase
     .from("projects")
@@ -75,7 +77,7 @@ export default async function ProjectPage({
               project={p}
               trigger={
                 <Button variant="outline" size="sm">
-                  Edit project
+                  {t("projects.editProjectButton")}
                 </Button>
               }
             />
@@ -86,14 +88,14 @@ export default async function ProjectPage({
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider">
-            Tasks
+            {t("projects.tasks")}
           </h2>
           <TaskForm
             projects={allProjects}
             defaultProjectId={p.id}
             trigger={
               <Button size="sm">
-                <Plus className="size-4" /> Add task
+                <Plus className="size-4" /> {t("projects.addTask")}
               </Button>
             }
           />
@@ -101,30 +103,30 @@ export default async function ProjectPage({
 
         {taskList.length === 0 ? (
           <EmptyState
-            title="No tasks yet"
-            description="Add the first concrete step for this project."
+            title={t("projects.noTasks")}
+            description={t("projects.noTasksHint")}
           />
         ) : (
           <div className="space-y-6">
             {todo.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  To do
+                  {t("projects.todo")}
                 </p>
-                {todo.map((t) => (
-                  <TaskActionsClient key={t.id} task={t} projects={allProjects} />
+                {todo.map((tsk) => (
+                  <TaskActionsClient key={tsk.id} task={tsk} projects={allProjects} />
                 ))}
               </div>
             )}
             {done.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Done
+                  {t("projects.done")}
                 </p>
-                {done.map((t) => (
+                {done.map((tsk) => (
                   <TaskActionsClient
-                    key={t.id}
-                    task={t}
+                    key={tsk.id}
+                    task={tsk}
                     projects={allProjects}
                   />
                 ))}
@@ -133,12 +135,12 @@ export default async function ProjectPage({
             {parked.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Parked
+                  {t("projects.parked")}
                 </p>
-                {parked.map((t) => (
+                {parked.map((tsk) => (
                   <TaskActionsClient
-                    key={t.id}
-                    task={t}
+                    key={tsk.id}
+                    task={tsk}
                     projects={allProjects}
                   />
                 ))}

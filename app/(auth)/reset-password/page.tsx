@@ -15,8 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useT } from "@/components/i18n/i18n-provider";
 
 export default function ResetPasswordPage() {
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   const form = useForm<ResetPasswordValues>({
@@ -31,21 +33,21 @@ export default function ResetPasswordPage() {
 
     startTransition(async () => {
       const res = await resetPasswordAction(fd);
-      if (res?.error) toast.error(res.error);
+      if (res?.error) toast.error(t(res.error));
     });
   };
 
   return (
     <Card className="border-border/60 shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Set a new password</CardTitle>
-        <CardDescription>Choose a password you can remember.</CardDescription>
+        <CardTitle className="text-2xl">{t("auth.setNewPassword")}</CardTitle>
+        <CardDescription>{t("auth.setNewPasswordDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
-              New password
+              {t("auth.newPassword")}
             </label>
             <Input
               id="password"
@@ -55,13 +57,13 @@ export default function ResetPasswordPage() {
             />
             {form.formState.errors.password && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.password.message}
+                {t(form.formState.errors.password.message ?? "")}
               </p>
             )}
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium">
-              Confirm password
+              {t("auth.confirmPassword")}
             </label>
             <Input
               id="confirmPassword"
@@ -71,12 +73,12 @@ export default function ResetPasswordPage() {
             />
             {form.formState.errors.confirmPassword && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.confirmPassword.message}
+                {t(form.formState.errors.confirmPassword.message ?? "")}
               </p>
             )}
           </div>
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Saving…" : "Update password"}
+            {pending ? t("common.saving") : t("auth.updatePassword")}
           </Button>
         </form>
       </CardContent>

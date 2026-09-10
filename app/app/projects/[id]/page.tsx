@@ -1,9 +1,7 @@
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getT } from "@/lib/i18n";
-import { TaskForm } from "@/components/tasks/task-form";
-import { TaskMenu } from "@/components/tasks/task-menu";
-import { ProjectForm } from "@/components/projects/project-form";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +11,15 @@ import {
   PROJECT_CATEGORY_META,
   TASK_TYPE_META,
 } from "@/lib/constants";
-import type { Project, Task } from "@/lib/types";
+import type { Project, Subtask, Task } from "@/lib/types";
+
+// Heavy client forms — lazy-load to reduce initial bundle.
+const TaskForm = dynamic(
+  () => import("@/components/tasks/task-form").then((m) => m.TaskForm)
+);
+const ProjectForm = dynamic(
+  () => import("@/components/projects/project-form").then((m) => m.ProjectForm)
+);
 
 export default async function ProjectPage({
   params,
@@ -24,7 +30,7 @@ export default async function ProjectPage({
   const supabase = await createClient();
   const { t } = await getT();
 
-  // All three queries depend only on `id` — fetch them in parallel.
+  // Fetch project, all projects, and tasks in parallel.
   const [
     { data: project },
     { data: projects },
@@ -49,6 +55,17 @@ export default async function ProjectPage({
   const p = project as unknown as Project;
   const taskList = (tasks ?? []) as Task[];
   const meta = PROJECT_CATEGORY_META[p.category];
+
+  // Fetch subtasks for all tasks in this project.
+  const taskIds = taskList.map((t) => t.id);
+  const { data: subtasksData } = taskIds.length > 0
+    ? await supabase
+        .from("subtasks")
+        .select("*")
+        .in("task_id", taskIds)
+        .order("position", { ascending: true })
+    : { data: [] as Subtask[] | null };
+  const subtasks = (subtasksData ?? []) as Subtask[];
 
   const todo = taskList.filter(
     (t) => t.status === "TODO" || t.status === "IN_PROGRESS"
@@ -116,7 +133,12 @@ export default async function ProjectPage({
                   {t("projects.todo")}
                 </p>
                 {todo.map((tsk) => (
-                  <TaskActionsClient key={tsk.id} task={tsk} projects={allProjects} />
+                  <TaskActionsClient
+                    key={tsk.id}
+                    task={tsk}
+                    projects={allProjects}
+                    subtasks={subtasks.filter((s) => s.task_id === tsk.id)}
+                  />
                 ))}
               </div>
             )}
@@ -130,6 +152,7 @@ export default async function ProjectPage({
                     key={tsk.id}
                     task={tsk}
                     projects={allProjects}
+                    subtasks={subtasks.filter((s) => s.task_id === tsk.id)}
                   />
                 ))}
               </div>
@@ -144,6 +167,7 @@ export default async function ProjectPage({
                     key={tsk.id}
                     task={tsk}
                     projects={allProjects}
+                    subtasks={subtasks.filter((s) => s.task_id === tsk.id)}
                   />
                 ))}
               </div>

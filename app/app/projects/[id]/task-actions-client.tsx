@@ -6,6 +6,7 @@ import { CalendarPlus, CalendarCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TaskMenu } from "@/components/tasks/task-menu";
+import { SubtaskList } from "@/components/tasks/subtask-list";
 import {
   setTaskStatusAction,
   addToTodayAction,
@@ -14,14 +15,16 @@ import {
 import { TASK_TYPE_META } from "@/lib/constants";
 import { useT } from "@/components/i18n/i18n-provider";
 import { todayISO } from "@/lib/utils";
-import type { Project, Task } from "@/lib/types";
+import type { Project, Subtask, Task } from "@/lib/types";
 
 export function TaskActionsClient({
   task,
   projects,
+  subtasks,
 }: {
   task: Task;
   projects: Project[];
+  subtasks: Subtask[];
 }) {
   const t = useT();
   const [pending, startTransition] = useTransition();
@@ -58,63 +61,75 @@ export function TaskActionsClient({
   const meta = TASK_TYPE_META[task.type];
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-card px-3 py-2.5">
-      <button
-        onClick={toggle}
-        disabled={pending}
-        aria-label={done ? t("today.markNotDone") : t("today.markDone")}
-        className="shrink-0"
-      >
-        <div
-          className={`flex size-5 items-center justify-center rounded border ${
-            done
-              ? "border-foreground bg-foreground text-background"
-              : "border-input"
-          }`}
+    <div className="rounded-lg border border-border/50 bg-card px-3 py-2.5">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggle}
+          disabled={pending}
+          aria-label={done ? t("today.markNotDone") : t("today.markDone")}
+          className="shrink-0"
         >
-          {done && (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="size-3.5"
-              stroke="currentColor"
-              strokeWidth={3}
-            >
-              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+          <div
+            className={`flex size-5 items-center justify-center rounded border ${
+              done
+                ? "border-foreground bg-foreground text-background"
+                : "border-input"
+            }`}
+          >
+            {done && (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="size-3.5"
+                stroke="currentColor"
+                strokeWidth={3}
+              >
+                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+        </button>
+        <div className="min-w-0 flex-1">
+          <p
+            className={`truncate text-sm ${
+              done ? "text-muted-foreground line-through" : ""
+            }`}
+          >
+            {task.title}
+          </p>
+          {task.next_action && !done && (
+            <p className="truncate text-xs text-muted-foreground">
+              → {task.next_action}
+            </p>
           )}
         </div>
-      </button>
-      <div className="min-w-0 flex-1">
-        <p
-          className={`truncate text-sm ${
-            done ? "text-muted-foreground line-through" : ""
-          }`}
+        <Badge variant="secondary" className="text-[10px]">
+          {meta.emoji} {meta.short}
+        </Badge>
+        <Button
+          size="sm"
+          variant={inToday ? "secondary" : "outline"}
+          onClick={toggleToday}
+          disabled={pending}
+          className="shrink-0"
         >
-          {task.title}
-        </p>
+          {inToday ? (
+            <>
+              <CalendarCheck className="size-3.5" /> {t("common.inToday")}
+            </>
+          ) : (
+            <>
+              <CalendarPlus className="size-3.5" /> {t("common.addToTodayShort")}
+            </>
+          )}
+        </Button>
+        <TaskMenu task={task} projects={projects} subtasks={subtasks} />
       </div>
-      <Badge variant="secondary" className="text-[10px]">
-        {meta.emoji} {meta.short}
-      </Badge>
-      <Button
-        size="sm"
-        variant={inToday ? "secondary" : "outline"}
-        onClick={toggleToday}
-        disabled={pending}
-        className="shrink-0"
-      >
-        {inToday ? (
-          <>
-            <CalendarCheck className="size-3.5" /> {t("common.inToday")}
-          </>
-        ) : (
-          <>
-            <CalendarPlus className="size-3.5" /> {t("common.addToTodayShort")}
-          </>
-        )}
-      </Button>
-      <TaskMenu task={task} projects={projects} />
+      {subtasks.length > 0 && (
+        <div className="mt-2 pl-8">
+          <SubtaskList taskId={task.id} subtasks={subtasks} variant="compact" />
+        </div>
+      )}
     </div>
   );
 }

@@ -35,7 +35,12 @@
     "addToTodayShort": "+ Today",
     "inToday": "In Today",
     "removeFromToday": "Remove from Today",
-    "chooseTask": "Choose task"
+    "chooseTask": "Choose task",
+    "nextAction": "Next action",
+    "subtasks": "Subtasks",
+    "addSubtask": "Add subtask",
+    "doneNextStep": "Done → Next step",
+    "noSubtasks": "No subtasks yet"
   },
   "nav": {
     "today": "Today",
@@ -224,6 +229,8 @@
     "typeLabel": "Type",
     "priorityLabel": "Priority",
     "dueDateLabel": "Due date",
+    "nextActionLabel": "Next action (one concrete step)",
+    "subtasksLabel": "Subtasks",
     "placeholderNoProject": "No project",
     "postCreateTitle": "Task created!",
     "postCreateDescription": "What's next for this task?",
@@ -339,6 +346,9 @@
     "couldNotUpdateEnergyTask": "Could not update energy task.",
     "couldNotDeleteEnergyTask": "Could not delete energy task.",
     "couldNotSaveFocusSession": "Could not save focus session.",
+    "couldNotCreateSubtask": "Could not create the subtask.",
+    "couldNotUpdateSubtask": "Could not update the subtask.",
+    "couldNotDeleteSubtask": "Could not delete the subtask.",
     "taskNotFound": "Task not found.",
     "titleRequired": "Title required",
     "whatCameToMind": "What came to mind?",

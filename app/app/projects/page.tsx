@@ -1,10 +1,15 @@
+import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/server";
 import { getT } from "@/lib/i18n";
-import { ProjectForm } from "@/components/projects/project-form";
 import { ProjectCard } from "@/components/projects/project-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+
+// Heavy client form — lazy-load to reduce initial bundle.
+const ProjectForm = dynamic(
+  () => import("@/components/projects/project-form").then((m) => m.ProjectForm)
+);
 import {
   PROJECT_CATEGORIES,
   PROJECT_CATEGORY_META,

@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/server";
 import { todayISO } from "@/lib/utils";
 import { getT } from "@/lib/i18n";
@@ -8,7 +9,6 @@ import { EnergySection } from "@/components/today/energy-section";
 import { CurrentFocus } from "@/components/today/current-focus";
 import { FocusStats } from "@/components/today/focus-stats";
 import { EmptyState } from "@/components/shared/empty-state";
-import { TaskForm } from "@/components/tasks/task-form";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -17,8 +17,14 @@ import type {
   DailyPlan,
   EnergyTask,
   Project,
+  Subtask,
   Task,
 } from "@/lib/types";
+
+// Heavy client form — lazy-load to reduce initial bundle.
+const TaskForm = dynamic(
+  () => import("@/components/tasks/task-form").then((m) => m.TaskForm)
+);
 
 function currentPeriod() {
   const now = new Date();
@@ -71,6 +77,7 @@ export default async function TodayPage() {
     { data: cand },
     { data: todaySessions },
     { data: pj },
+    { data: subtasksData },
   ] = await Promise.all([
     slotIds.length > 0
       ? supabase.from("tasks").select("*").in("id", slotIds)
@@ -101,6 +108,13 @@ export default async function TodayPage() {
       .gte("started_at", dayStart)
       .lte("started_at", dayEnd),
     supabase.from("projects").select("*").order("created_at", { ascending: false }),
+    slotIds.length > 0
+      ? supabase
+          .from("subtasks")
+          .select("*")
+          .in("task_id", slotIds)
+          .order("position", { ascending: true })
+      : Promise.resolve({ data: [] as Subtask[] | null }),
   ]);
 
   const slotTasks = (found ?? []) as Task[];
@@ -111,6 +125,7 @@ export default async function TodayPage() {
   const cashTarget = (ct ?? null) as CashTargetType | null;
   const candidates = (cand ?? []) as Task[];
   const projects = (pj ?? []) as Project[];
+  const allSubtasks = (subtasksData ?? []) as Subtask[];
 
   const focusSessionCount = (todaySessions ?? []).length;
   const focusTotalSeconds = (todaySessions ?? []).reduce(
@@ -168,6 +183,7 @@ export default async function TodayPage() {
               task={bigWin}
               candidates={candidates}
               projects={projects}
+              subtasks={bigWin ? allSubtasks.filter((s) => s.task_id === bigWin.id) : []}
               emphasize
             />
             <TodaySlotCard
@@ -175,12 +191,14 @@ export default async function TodayPage() {
               task={money}
               candidates={candidates}
               projects={projects}
+              subtasks={money ? allSubtasks.filter((s) => s.task_id === money.id) : []}
             />
             <TodaySlotCard
               slot="asset"
               task={asset}
               candidates={candidates}
               projects={projects}
+              subtasks={asset ? allSubtasks.filter((s) => s.task_id === asset.id) : []}
             />
           </div>
         </section>

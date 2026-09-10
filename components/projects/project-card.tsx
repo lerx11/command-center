@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
   Pause,
@@ -18,7 +19,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
-import { ProjectForm } from "./project-form";
+
+// Lazy-load the form dialog — only needed when user clicks "Edit".
+const ProjectForm = dynamic(
+  () => import("./project-form").then((m) => m.ProjectForm),
+  { ssr: false }
+);
 import {
   setProjectStatusAction,
   deleteProjectAction,

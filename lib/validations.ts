@@ -46,8 +46,14 @@ export const taskSchema = z.object({
   status: z.enum(["TODO", "IN_PROGRESS", "DONE", "PARKED", "CANCELLED"]),
   priority: z.enum(["HIGH", "NORMAL", "LOW"]),
   due_date: z.string().nullable(),
+  next_action: z.string().max(200).optional().or(z.literal("")),
 });
 export type TaskValues = z.infer<typeof taskSchema>;
+
+export const subtaskSchema = z.object({
+  title: z.string().min(1, "validations.titleRequired").max(200),
+});
+export type SubtaskValues = z.infer<typeof subtaskSchema>;
 
 export const energyTaskSchema = z.object({
   category: z.enum(["BODY", "MIND", "RECOVERY"]),

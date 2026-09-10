@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { Crosshair, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskMenu } from "@/components/tasks/task-menu";
+import { SubtaskList } from "@/components/tasks/subtask-list";
 import { TaskPicker } from "./task-picker";
 import { setTaskStatusAction, clearDailyPlanSlotAction } from "@/app/app/tasks/actions";
 import { useT } from "@/components/i18n/i18n-provider";
-import type { Project, Task } from "@/lib/types";
+import type { Project, Subtask, Task } from "@/lib/types";
 
 type Slot = "big_win" | "money" | "asset";
 
@@ -18,12 +19,14 @@ export function TodaySlotCard({
   task,
   candidates,
   projects,
+  subtasks,
   emphasize,
 }: {
   slot: Slot;
   task: Task | null;
   candidates: Task[];
   projects: Project[];
+  subtasks: Subtask[];
   emphasize?: boolean;
 }) {
   const t = useT();
@@ -86,10 +89,20 @@ export function TodaySlotCard({
           <p className="mt-3 text-lg font-semibold leading-snug">
             {task.title}
           </p>
+          {task.next_action && (
+            <p className="mt-1 text-sm font-medium text-muted-foreground">
+              → {task.next_action}
+            </p>
+          )}
           {task.description && (
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
               {task.description}
             </p>
+          )}
+          {subtasks.length > 0 && (
+            <div className="mt-2">
+              <SubtaskList taskId={task.id} subtasks={subtasks} variant="compact" />
+            </div>
           )}
           <div className="mt-4 flex items-center gap-2">
             <Button asChild size="sm" className="flex-1">

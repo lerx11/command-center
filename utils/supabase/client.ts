@@ -10,5 +10,10 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(url, anonKey);
+  return createBrowserClient(url, anonKey, {
+    realtime: {
+      worker: true,
+      // Heartbeat in a dedicated worker — survives background tab throttling.
+    },
+  });
 }

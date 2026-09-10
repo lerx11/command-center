@@ -86,6 +86,8 @@ export function usePomodoroTimer(taskId: string | null) {
   const [isLongBreak, setIsLongBreak] = useState(false);
   const startedAtRef = useRef<Date | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Wall-clock reference — survives background tab throttling for accurate countdowns.
+  const lastTickRef = useRef<number>(0);
 
   // On mount: read saved duration from localStorage (client-only to avoid hydration mismatch).
   useEffect(() => {
@@ -96,22 +98,82 @@ export function usePomodoroTimer(taskId: string | null) {
   // Countdown tick — only runs in running/break phases.
   useEffect(() => {
     if (phase !== "running" && phase !== "break") {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       return;
     }
+
+    lastTickRef.current = Date.now();
     intervalRef.current = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          // Phase end — handle in the next effect via phase transition.
-          if (phase === "running") handleSessionEnd();
-          else handleBreakEnd();
-          return 0;
-        }
-        return s - 1;
-      });
+      const now = Date.now();
+      const elapsed = Math.floor((now - lastTickRef.current) / 1000);
+      if (elapsed > 0) {
+        lastTickRef.current += elapsed * 1000;
+        setSecondsLeft((s) => {
+          const next = s - elapsed;
+          if (next <= 0) {
+            if (phase === "running") handleSessionEnd();
+            else handleBreakEnd();
+            return 0;
+          }
+          return next;
+        });
+      }
     }, 1000);
+
+    // Pause ticking when tab is hidden — saves CPU/battery; wall-clock ref catches up on return.
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      } else if (phase === "running" || phase === "break") {
+        // Tab back — catch up elapsed time, resume ticking.
+        const now = Date.now();
+        const elapsed = Math.floor((now - lastTickRef.current) / 1000);
+        if (elapsed > 0) {
+          lastTickRef.current += elapsed * 1000;
+          setSecondsLeft((s) => {
+            const next = s - elapsed;
+            if (next <= 0) {
+              if (phase === "running") handleSessionEnd();
+              else handleBreakEnd();
+              return 0;
+            }
+            return next;
+          });
+        }
+        if (!intervalRef.current) {
+          intervalRef.current = setInterval(() => {
+            const now2 = Date.now();
+            const el = Math.floor((now2 - lastTickRef.current) / 1000);
+            if (el > 0) {
+              lastTickRef.current += el * 1000;
+              setSecondsLeft((s) => {
+                const next = s - el;
+                if (next <= 0) {
+                  if (phase === "running") handleSessionEnd();
+                  else handleBreakEnd();
+                  return 0;
+                }
+                return next;
+              });
+            }
+          }, 1000);
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);

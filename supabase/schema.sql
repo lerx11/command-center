@@ -99,6 +99,7 @@ create table if not exists public.tasks (
   priority text not null default 'NORMAL' check (priority in ('HIGH','NORMAL','LOW')),
   due_date date,
   completed_at timestamptz,
+  next_action text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -122,6 +123,38 @@ create policy "tasks_update_own" on public.tasks
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 drop policy if exists "tasks_delete_own" on public.tasks;
 create policy "tasks_delete_own" on public.tasks
+  for delete using (auth.uid() = user_id);
+
+-- =============================================================================
+-- 3b. SUBTASKS
+-- =============================================================================
+create table if not exists public.subtasks (
+  id uuid primary key default gen_random_uuid(),
+  task_id uuid not null references public.tasks(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  completed boolean not null default false,
+  position integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_subtasks_task_id on public.subtasks(task_id);
+create index if not exists idx_subtasks_user_id on public.subtasks(user_id);
+
+alter table public.subtasks enable row level security;
+
+drop policy if exists "subtasks_select_own" on public.subtasks;
+create policy "subtasks_select_own" on public.subtasks
+  for select using (auth.uid() = user_id);
+drop policy if exists "subtasks_insert_own" on public.subtasks;
+create policy "subtasks_insert_own" on public.subtasks
+  for insert with check (auth.uid() = user_id);
+drop policy if exists "subtasks_update_own" on public.subtasks;
+create policy "subtasks_update_own" on public.subtasks
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "subtasks_delete_own" on public.subtasks;
+create policy "subtasks_delete_own" on public.subtasks
   for delete using (auth.uid() = user_id);
 
 -- =============================================================================
@@ -336,7 +369,7 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'profiles','projects','tasks','daily_plans','energy_tasks','daily_reviews','cash_targets'
+    'profiles','projects','tasks','daily_plans','energy_tasks','daily_reviews','cash_targets','subtasks'
   ]
   loop
     execute format(

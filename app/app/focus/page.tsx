@@ -1,11 +1,21 @@
+import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/server";
 import { getT } from "@/lib/i18n";
-import { FocusTimer } from "@/components/focus/focus-timer";
-import { PomodoroTimer } from "@/components/focus/pomodoro-timer";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { PageLoading } from "@/components/shared/loading";
 import Link from "next/link";
-import type { Task } from "@/lib/types";
+import type { Subtask, Task } from "@/lib/types";
+
+// Heavy client-side timer components — lazy-load to reduce initial bundle.
+const FocusTimer = dynamic(
+  () => import("@/components/focus/focus-timer").then((m) => m.FocusTimer),
+  { loading: () => <PageLoading /> }
+);
+const PomodoroTimer = dynamic(
+  () => import("@/components/focus/pomodoro-timer").then((m) => m.PomodoroTimer),
+  { loading: () => <PageLoading /> }
+);
 
 // UUID v4 format — matches what Supabase gen_random_uuid() produces.
 const UUID_RE =
@@ -40,11 +50,14 @@ export default async function FocusPage({
   const taskId = rawTaskId;
 
   const supabase = await createClient();
-  const { data: task, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("id", taskId)
-    .maybeSingle();
+  const [{ data: task, error }, { data: subtasksData }] = await Promise.all([
+    supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
+    supabase
+      .from("subtasks")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("position", { ascending: true }),
+  ]);
 
   if (error || !task) {
     return (
@@ -61,7 +74,10 @@ export default async function FocusPage({
     );
   }
 
+  const subtasks = (subtasksData ?? []) as Subtask[];
+
   // mode=pomodoro (or no mode — Pomodoro is the default from Today's BIG_WIN/MONEY/ASSET).
-  if (mode === "free") return <FocusTimer task={task as Task} />;
-  return <PomodoroTimer task={task as Task} />;
+  if (mode === "free")
+    return <FocusTimer task={task as Task} subtasks={subtasks} />;
+  return <PomodoroTimer task={task as Task} subtasks={subtasks} />;
 }

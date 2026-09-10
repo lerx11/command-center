@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
   MoreHorizontal,
@@ -23,18 +24,24 @@ import {
   addToTodayAction,
   removeFromTodayAction,
 } from "@/app/app/tasks/actions";
-import { TaskForm } from "./task-form";
 import { useT } from "@/components/i18n/i18n-provider";
 import { todayISO } from "@/lib/utils";
-import type { Project, Task } from "@/lib/types";
+import type { Project, Subtask, Task } from "@/lib/types";
+
+// Lazy-load the form dialog — only needed when user clicks "Edit".
+const TaskForm = dynamic(() => import("./task-form").then((m) => m.TaskForm), {
+  ssr: false,
+});
 
 export function TaskMenu({
   task,
   projects,
+  subtasks,
   withEditButton = true,
 }: {
   task: Task;
   projects: Project[];
+  subtasks?: Subtask[];
   withEditButton?: boolean;
 }) {
   const t = useT();
@@ -98,7 +105,7 @@ export function TaskMenu({
   return (
     <div className="flex items-center">
       {withEditButton && (
-        <TaskForm task={task} projects={projects} trigger={editTrigger} />
+        <TaskForm task={task} projects={projects} subtasks={subtasks} trigger={editTrigger} />
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

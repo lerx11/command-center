@@ -35,7 +35,12 @@
     "addToTodayShort": "+ Today",
     "inToday": "В Today",
     "removeFromToday": "Убрать из Today",
-    "chooseTask": "Выбрать задачу"
+    "chooseTask": "Выбрать задачу",
+    "nextAction": "Следующий шаг",
+    "subtasks": "Подзадачи",
+    "addSubtask": "Добавить подзадачу",
+    "doneNextStep": "Сделал → Следующий шаг",
+    "noSubtasks": "Подзадач пока нет"
   },
   "nav": {
     "today": "Сегодня",
@@ -225,6 +230,8 @@
     "typeLabel": "Тип",
     "priorityLabel": "Приоритет",
     "dueDateLabel": "Срок",
+    "nextActionLabel": "Следующий шаг (одно конкретное действие)",
+    "subtasksLabel": "Подзадачи",
     "placeholderNoProject": "Без проекта",
     "postCreateTitle": "Задача создана!",
     "postCreateDescription": "Что дальше с этой задачей?",
@@ -340,6 +347,9 @@
     "couldNotUpdateEnergyTask": "Не удалось обновить задачу энергии.",
     "couldNotDeleteEnergyTask": "Не удалось удалить задачу энергии.",
     "couldNotSaveFocusSession": "Не удалось сохранить сессию фокуса.",
+    "couldNotCreateSubtask": "Не удалось создать подзадачу.",
+    "couldNotUpdateSubtask": "Не удалось обновить подзадачу.",
+    "couldNotDeleteSubtask": "Не удалось удалить подзадачу.",
     "taskNotFound": "Задача не найдена.",
     "titleRequired": "Введите название",
     "whatCameToMind": "Что пришло в голову?",

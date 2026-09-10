@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
-import { taskSchema, energyTaskSchema } from "@/lib/validations";
+import { taskSchema, energyTaskSchema, subtaskSchema } from "@/lib/validations";
 import { todayISO, addDays } from "@/lib/utils";
 
 async function getUser() {
@@ -25,6 +25,7 @@ export async function createTaskAction(formData: FormData) {
     status: formData.get("status") || "TODO",
     priority: formData.get("priority") || "NORMAL",
     due_date: formData.get("due_date") || null,
+    next_action: formData.get("next_action") || "",
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
@@ -37,6 +38,7 @@ export async function createTaskAction(formData: FormData) {
       description: parsed.data.description ?? "",
       project_id: parsed.data.project_id ?? null,
       due_date: parsed.data.due_date || null,
+      next_action: parsed.data.next_action || null,
     })
     .select("id")
     .single();
@@ -60,6 +62,7 @@ export async function updateTaskAction(formData: FormData) {
     status: formData.get("status"),
     priority: formData.get("priority"),
     due_date: formData.get("due_date") || null,
+    next_action: formData.get("next_action") || "",
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
@@ -71,6 +74,7 @@ export async function updateTaskAction(formData: FormData) {
       description: parsed.data.description ?? "",
       project_id: parsed.data.project_id ?? null,
       due_date: parsed.data.due_date || null,
+      next_action: parsed.data.next_action || null,
     })
     .eq("id", id)
     .eq("user_id", user.id);
@@ -361,6 +365,83 @@ export async function saveFocusSessionAction(formData: FormData) {
 
   revalidatePath("/app/dashboard");
   revalidatePath("/app/today");
+  return { success: true as const };
+}
+
+// Subtask actions
+
+export async function createSubtaskAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const taskId = String(formData.get("task_id"));
+  const parsed = subtaskSchema.safeParse({
+    title: formData.get("title"),
+  });
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
+
+  // Get next position
+  const { data: existing } = await supabase
+    .from("subtasks")
+    .select("position")
+    .eq("task_id", taskId)
+    .eq("user_id", user.id)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextPos = (existing?.position ?? -1) + 1;
+
+  const { error } = await supabase.from("subtasks").insert({
+    task_id: taskId,
+    user_id: user.id,
+    title: parsed.data.title,
+    position: nextPos,
+  });
+  if (error) return { error: "errors.couldNotCreateSubtask" };
+
+  revalidatePath("/app/today");
+  revalidatePath("/app/projects");
+  revalidatePath("/app/focus");
+  return { success: true as const };
+}
+
+export async function toggleSubtaskAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const id = String(formData.get("id"));
+  const completed = formData.get("completed") === "true";
+
+  const { error } = await supabase
+    .from("subtasks")
+    .update({ completed: !completed })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { error: "errors.couldNotUpdateSubtask" };
+
+  revalidatePath("/app/today");
+  revalidatePath("/app/projects");
+  revalidatePath("/app/focus");
+  return { success: true as const };
+}
+
+export async function deleteSubtaskAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const id = String(formData.get("id"));
+  const { error } = await supabase
+    .from("subtasks")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { error: "errors.couldNotDeleteSubtask" };
+
+  revalidatePath("/app/today");
+  revalidatePath("/app/projects");
+  revalidatePath("/app/focus");
   return { success: true as const };
 }
 

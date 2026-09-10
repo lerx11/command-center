@@ -13,27 +13,70 @@ export function useFocusTimer(taskId: string | null) {
   const [phase, setPhase] = useState<Phase>("running");
   const [seconds, setSeconds] = useState(0);
   const startedAtRef = useRef<Date>(new Date());
+  // Wall-clock reference for accurate elapsed time — survives background throttling.
+  const lastTickRef = useRef<number>(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const tick = useCallback(() => {
+    const now = Date.now();
+    const elapsed = Math.floor((now - lastTickRef.current) / 1000);
+    if (elapsed > 0) {
+      lastTickRef.current += elapsed * 1000;
+      setSeconds((s) => s + elapsed);
+    }
+  }, []);
 
   useEffect(() => {
     if (phase !== "running") {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       return;
     }
-    intervalRef.current = setInterval(() => {
-      setSeconds((s) => s + 1);
-    }, 1000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+
+    lastTickRef.current = Date.now();
+    intervalRef.current = setInterval(tick, 1000);
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab going to background — stop the interval to save CPU/battery.
+        // The wall-clock reference preserves elapsed time.
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      } else if (phase === "running") {
+        // Tab back to foreground — catch up elapsed time, then resume ticking.
+        tick();
+        if (!intervalRef.current) {
+          intervalRef.current = setInterval(tick, 1000);
+        }
+      }
     };
-  }, [phase]);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [phase, tick]);
 
   const pause = useCallback(() => setPhase("paused"), []);
-  const resume = useCallback(() => setPhase("running"), []);
+  const resume = useCallback(() => {
+    lastTickRef.current = Date.now();
+    setPhase("running");
+  }, []);
 
   const complete = useCallback(async () => {
     setPhase("completed");
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     const fd = new FormData();
     fd.set("taskId", taskId ?? "null");
     fd.set("startedAt", startedAtRef.current.toISOString());
@@ -43,7 +86,6 @@ export function useFocusTimer(taskId: string | null) {
     else toast.success(t("toasts.focusSessionCompleted"));
   }, [seconds, taskId, t]);
 
-  // Spacebar toggles pause/resume (when not typing) — handled in component.
   return {
     phase,
     seconds,

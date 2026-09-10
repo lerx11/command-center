@@ -521,3 +521,106 @@ export async function removeFromTodayAction(formData: FormData) {
   revalidatePath("/app/today");
   return { success: true as const };
 }
+
+// Add a task to today's EXTRA list (unlimited, non-core).
+export async function addToTodayExtraAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const taskId = String(formData.get("taskId"));
+  const date = todayISO();
+
+  // Ensure plan exists
+  const { data: plan } = await supabase
+    .from("daily_plans")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .maybeSingle();
+
+  let planId = plan?.id;
+  if (!planId) {
+    const { data: np, error } = await supabase
+      .from("daily_plans")
+      .insert({ user_id: user.id, date })
+      .select("id")
+      .single();
+    if (error || !np) return { error: "errors.couldNotPreparePlan" };
+    planId = np.id;
+  }
+
+  // Check if already in extra list
+  const { data: existing } = await supabase
+    .from("daily_plan_extra_tasks")
+    .select("id")
+    .eq("daily_plan_id", planId)
+    .eq("task_id", taskId)
+    .maybeSingle();
+  if (existing) return { success: true as const };
+
+  // Get next position
+  const { data: lastPos } = await supabase
+    .from("daily_plan_extra_tasks")
+    .select("position")
+    .eq("daily_plan_id", planId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextPos = (lastPos?.position ?? -1) + 1;
+
+  const { error } = await supabase.from("daily_plan_extra_tasks").insert({
+    daily_plan_id: planId,
+    task_id: taskId,
+    user_id: user.id,
+    position: nextPos,
+  });
+  if (error) return { error: "errors.couldNotSetTask" };
+
+  // Mark task as IN_PROGRESS and set due_date to today
+  await supabase
+    .from("tasks")
+    .update({ status: "IN_PROGRESS", due_date: date })
+    .eq("id", taskId)
+    .eq("user_id", user.id);
+
+  revalidatePath("/app/today");
+  revalidatePath("/app/projects");
+  return { success: true as const };
+}
+
+// Remove a task from today's EXTRA list.
+export async function removeFromTodayExtraAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const taskId = String(formData.get("taskId"));
+  const date = todayISO();
+
+  const { data: plan } = await supabase
+    .from("daily_plans")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .maybeSingle();
+  if (!plan) return { success: true as const };
+
+  const { error } = await supabase
+    .from("daily_plan_extra_tasks")
+    .delete()
+    .eq("daily_plan_id", plan.id)
+    .eq("task_id", taskId)
+    .eq("user_id", user.id);
+  if (error) return { error: "errors.couldNotClearSlot" };
+
+  // Reset task to TODO
+  await supabase
+    .from("tasks")
+    .update({ status: "TODO" })
+    .eq("id", taskId)
+    .eq("user_id", user.id);
+
+  revalidatePath("/app/today");
+  revalidatePath("/app/projects");
+  return { success: true as const };
+}

@@ -13,7 +13,6 @@ const ProjectForm = dynamic(
 import {
   PROJECT_CATEGORIES,
   PROJECT_CATEGORY_META,
-  MAX_ACTIVE_PROJECTS,
   type ProjectCategory,
 } from "@/lib/constants";
 import type { Project } from "@/lib/types";
@@ -47,16 +46,9 @@ export default async function ProjectsPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t("projects.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("projects.activeProjects")}{" "}
-            <span
-              className={
-                activeCount >= MAX_ACTIVE_PROJECTS
-                  ? "font-semibold text-foreground"
-                  : ""
-              }
-            >
+            <span className="font-semibold text-foreground">
               {activeCount}
-            </span>{" "}
-            / {MAX_ACTIVE_PROJECTS}
+            </span>
           </p>
         </div>
         <ProjectForm

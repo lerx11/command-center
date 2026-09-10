@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { projectSchema } from "@/lib/validations";
-import { MAX_ACTIVE_PROJECTS } from "@/lib/constants";
 
 async function getUser() {
   const supabase = await createClient();
@@ -38,20 +37,6 @@ export async function createProjectAction(formData: FormData) {
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
-
-  // Soft limit: warn when activating beyond MAX_ACTIVE_PROJECTS.
-  if (
-    parsed.data.status === "ACTIVE" &&
-    parsed.data.category !== "PARKING"
-  ) {
-    const active = await countActiveProjects(supabase, user.id);
-    if (active >= MAX_ACTIVE_PROJECTS) {
-      return {
-        error: "errors.activeProjectsLimit",
-        limit: true as const,
-      };
-    }
-  }
 
   const { error } = await supabase.from("projects").insert({
     user_id: user.id,
@@ -148,12 +133,6 @@ export async function setProjectStatusAction(formData: FormData) {
         .maybeSingle(),
     ]);
     const wasActive = currentCat.data?.status === "ACTIVE";
-    if (!wasActive && activeCount >= MAX_ACTIVE_PROJECTS && currentCat.data?.category !== "PARKING") {
-      return {
-        error: "errors.activeProjectsLimitShort",
-        limit: true as const,
-      };
-    }
   }
 
   const { error } = await supabase

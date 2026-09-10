@@ -7,6 +7,7 @@ import { CashTarget } from "@/components/today/cash-target";
 import { TodaySlotCard } from "@/components/today/today-slot-card";
 import { EnergySection } from "@/components/today/energy-section";
 import { CurrentFocus } from "@/components/today/current-focus";
+import { ExtraTasks } from "@/components/today/extra-tasks";
 import { FocusStats } from "@/components/today/focus-stats";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import Link from "next/link";
 import type {
   CashTarget as CashTargetType,
   DailyPlan,
+  DailyPlanExtraTask,
   EnergyTask,
   Project,
   Subtask,
@@ -78,6 +80,7 @@ export default async function TodayPage() {
     { data: todaySessions },
     { data: pj },
     { data: subtasksData },
+    { data: extraRows },
   ] = await Promise.all([
     slotIds.length > 0
       ? supabase.from("tasks").select("*").in("id", slotIds)
@@ -115,6 +118,13 @@ export default async function TodayPage() {
           .in("task_id", slotIds)
           .order("position", { ascending: true })
       : Promise.resolve({ data: [] as Subtask[] | null }),
+    plan
+      ? supabase
+          .from("daily_plan_extra_tasks")
+          .select("*")
+          .eq("daily_plan_id", plan.id)
+          .order("position", { ascending: true })
+      : Promise.resolve({ data: [] as DailyPlanExtraTask[] | null }),
   ]);
 
   const slotTasks = (found ?? []) as Task[];
@@ -126,6 +136,33 @@ export default async function TodayPage() {
   const candidates = (cand ?? []) as Task[];
   const projects = (pj ?? []) as Project[];
   const allSubtasks = (subtasksData ?? []) as Subtask[];
+  const extraTaskRows = (extraRows ?? []) as DailyPlanExtraTask[];
+
+  // Fetch actual task data for extra tasks
+  const extraTaskIds = extraTaskRows.map((r) => r.task_id);
+  const { data: extraTasksData } = extraTaskIds.length > 0
+    ? await supabase.from("tasks").select("*").in("id", extraTaskIds)
+    : { data: [] as Task[] | null };
+  const extraTasks = (extraTasksData ?? []) as Task[];
+  // Sort by position from extraTaskRows
+  extraTasks.sort((a, b) => {
+    const pa = extraTaskRows.find((r) => r.task_id === a.id)?.position ?? 0;
+    const pb = extraTaskRows.find((r) => r.task_id === b.id)?.position ?? 0;
+    return pa - pb;
+  });
+
+  // Fetch subtasks for extra tasks too
+  const allTaskIds = [...slotIds, ...extraTaskIds];
+  const { data: extraSubtasksData } = allTaskIds.length > 0 && extraTaskIds.length > 0
+    ? await supabase
+        .from("subtasks")
+        .select("*")
+        .in("task_id", allTaskIds)
+        .order("position", { ascending: true })
+    : { data: [] as Subtask[] | null };
+  const combinedSubtasks = allSubtasks.length > 0 && extraSubtasksData
+    ? [...allSubtasks, ...(extraSubtasksData as Subtask[])]
+    : (extraSubtasksData ?? allSubtasks) as Subtask[];
 
   const focusSessionCount = (todaySessions ?? []).length;
   const focusTotalSeconds = (todaySessions ?? []).reduce(
@@ -139,6 +176,13 @@ export default async function TodayPage() {
 
   const todayTasks = [bigWin, money, asset].filter(Boolean) as Task[];
   const allEmpty = !bigWin && !money && !asset;
+
+  // Core complete check
+  const coreDone =
+    bigWin?.status === "DONE" &&
+    money?.status === "DONE" &&
+    asset?.status === "DONE";
+  const coreHasTasks = !!(bigWin || money || asset);
 
   return (
     <div className="space-y-8">
@@ -183,7 +227,7 @@ export default async function TodayPage() {
               task={bigWin}
               candidates={candidates}
               projects={projects}
-              subtasks={bigWin ? allSubtasks.filter((s) => s.task_id === bigWin.id) : []}
+              subtasks={bigWin ? combinedSubtasks.filter((s) => s.task_id === bigWin.id) : []}
               emphasize
             />
             <TodaySlotCard
@@ -191,22 +235,41 @@ export default async function TodayPage() {
               task={money}
               candidates={candidates}
               projects={projects}
-              subtasks={money ? allSubtasks.filter((s) => s.task_id === money.id) : []}
+              subtasks={money ? combinedSubtasks.filter((s) => s.task_id === money.id) : []}
             />
             <TodaySlotCard
               slot="asset"
               task={asset}
               candidates={candidates}
               projects={projects}
-              subtasks={asset ? allSubtasks.filter((s) => s.task_id === asset.id) : []}
+              subtasks={asset ? combinedSubtasks.filter((s) => s.task_id === asset.id) : []}
             />
           </div>
         </section>
       )}
 
+      {/* Core complete badge */}
+      {coreHasTasks && coreDone && (
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-center">
+          <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+            {t("today.coreComplete")}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {t("today.coreCompleteHint")}
+          </p>
+        </div>
+      )}
+
+      <ExtraTasks
+        tasks={extraTasks}
+        projects={projects}
+        subtasks={combinedSubtasks}
+        candidates={candidates}
+      />
+
       <EnergySection energyTasks={energyTasks} />
 
-      <CurrentFocus todayTasks={todayTasks} />
+      <CurrentFocus todayTasks={[...todayTasks, ...extraTasks.filter((t) => t.status !== "DONE")]} />
     </div>
   );
 }

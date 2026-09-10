@@ -104,6 +104,7 @@ export const NAV_ITEMS = [
 
 export const SIDEBAR_ITEMS = [
   ...NAV_ITEMS,
+  { href: "/app/workspace", label: "Workspace", key: "workspace" },
   { href: "/app/review", label: "Review", key: "review" },
   { href: "/app/dashboard", label: "Dashboard", key: "dashboard" },
 ] as const;

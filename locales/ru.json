@@ -49,6 +49,7 @@
     "parking": "Парковка",
     "review": "Обзор",
     "dashboard": "Дашборд",
+    "workspace": "Карта",
     "settings": "Настройки"
   },
   "theme": {
@@ -219,6 +220,29 @@
     "moneyMoved": "Денег перемещено",
     "today": "Сегодня",
     "thisWeek": "Эта неделя"
+  },
+  "workspace": {
+    "title": "Карта системы",
+    "subtitle": "Вся система на одном экране",
+    "goal": "Цель",
+    "money": "Деньги",
+    "asset": "Активы",
+    "energy": "Энергия",
+    "parking": "Парковка",
+    "projects": "Проекты",
+    "tasks": "Задачи",
+    "subtasks": "Подзадачи",
+    "expand": "Развернуть",
+    "collapse": "Свернуть",
+    "noGoal": "Установи Cash Target",
+    "noGoalHint": "Определи финансовую цель, чтобы закрепить систему.",
+    "noProjects": "Создай первый проект",
+    "noProjectsHint": "Проекты организуют работу в потоки.",
+    "setGoal": "Установить цель",
+    "createProject": "Новый проект",
+    "activeTasks": "{count} активных",
+    "subtaskProgress": "{done}/{total}",
+    "cashTarget": "Цель по деньгам"
   },
   "taskForm": {
     "editTask": "Изменить задачу",

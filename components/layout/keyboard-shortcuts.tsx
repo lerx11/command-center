@@ -16,6 +16,7 @@ const ROUTE_SHORTCUTS: Record<string, string> = {
   p: "/app/parking",
   t: "/app/today",
   r: "/app/review",
+  w: "/app/workspace",
 };
 
 export function KeyboardShortcuts() {

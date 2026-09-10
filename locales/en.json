@@ -49,6 +49,7 @@
     "parking": "Parking",
     "review": "Review",
     "dashboard": "Dashboard",
+    "workspace": "Map",
     "settings": "Settings"
   },
   "theme": {
@@ -218,6 +219,29 @@
     "moneyMoved": "Money moved",
     "today": "Today",
     "thisWeek": "This week"
+  },
+  "workspace": {
+    "title": "Command Map",
+    "subtitle": "Your system at a glance",
+    "goal": "Goal",
+    "money": "Money",
+    "asset": "Asset",
+    "energy": "Energy",
+    "parking": "Parking",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "subtasks": "Subtasks",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "noGoal": "Set your Cash Target",
+    "noGoalHint": "Define your financial goal to anchor your system.",
+    "noProjects": "Create your first project",
+    "noProjectsHint": "Projects organize your work into actionable streams.",
+    "setGoal": "Set goal",
+    "createProject": "New project",
+    "activeTasks": "{count} active",
+    "subtaskProgress": "{done}/{total}",
+    "cashTarget": "Cash Target"
   },
   "taskForm": {
     "editTask": "Edit task",

@@ -8,6 +8,7 @@ import {
   FolderKanban,
   LayoutDashboard,
   ListChecks,
+  Map,
   ParkingSquare,
   Settings as SettingsIcon,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import { useT } from "@/components/i18n/i18n-provider";
 
 const ITEMS = [
   { href: "/app/today", key: "nav.today", icon: CalendarCheck },
+  { href: "/app/workspace", key: "nav.workspace", icon: Map },
   { href: "/app/focus", key: "nav.focus", icon: Crosshair },
   { href: "/app/projects", key: "nav.projects", icon: FolderKanban },
   { href: "/app/parking", key: "nav.parking", icon: ParkingSquare },

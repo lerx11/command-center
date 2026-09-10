@@ -20,7 +20,7 @@ export function FocusTimer({ task, subtasks }: { task: Task; subtasks: Subtask[]
   const router = useRouter();
   const t = useT();
   const [pending, startTransition] = useTransition();
-  const { phase, display, pause, resume, complete } = useFocusTimer(task.id);
+  const { phase, display, pause, resume, complete } = useFocusTimer(task.id, task.title);
 
   // NEXT ACTION: explicit field takes priority, else first incomplete subtask.
   const firstPendingSubtask = subtasks.find((s) => !s.completed);

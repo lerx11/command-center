@@ -30,6 +30,7 @@ import {
   deleteProjectAction,
 } from "@/app/app/projects/actions";
 import { useT } from "@/components/i18n/i18n-provider";
+import { PROJECT_STATUS_META } from "@/lib/constants";
 import type { Project } from "@/lib/types";
 
 export function ProjectCard({ project }: { project: Project }) {
@@ -73,8 +74,12 @@ export function ProjectCard({ project }: { project: Project }) {
           </p>
         )}
         <div className="mt-2 flex items-center gap-2">
-          <Badge variant="outline" className="text-[10px] uppercase">
-            {project.status}
+          <Badge
+            variant="outline"
+            className={`text-[10px] uppercase ${PROJECT_STATUS_META[project.status]?.badgeClass ?? ""}`}
+          >
+            <span className={`mr-1 inline-block size-1.5 rounded-full ${PROJECT_STATUS_META[project.status]?.dotClass ?? ""}`} />
+            {PROJECT_STATUS_META[project.status]?.label ?? project.status}
           </Badge>
         </div>
       </Link>

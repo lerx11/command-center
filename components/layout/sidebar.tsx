@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/i18n-provider";
+import { MiniFocusIndicator } from "@/components/focus/mini-focus-indicator";
 
 const ITEMS = [
   { href: "/app/today", key: "nav.today", icon: CalendarCheck },
@@ -63,6 +64,8 @@ export function Sidebar({ profileName }: { profileName: string }) {
           })}
         </ul>
       </nav>
+
+      <MiniFocusIndicator />
 
       <div className="border-t border-border/60 px-3 py-4">
         <Link

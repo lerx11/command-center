@@ -5,6 +5,7 @@ import { Sidebar } from "./sidebar";
 import { BottomNav } from "./bottom-nav";
 import { QuickCaptureFab } from "./quick-capture-fab";
 import { KeyboardShortcuts } from "./keyboard-shortcuts";
+import { FocusSessionProvider } from "@/components/focus/focus-session-provider";
 
 export function AppShell({
   profileName,
@@ -14,7 +15,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <>
+    <FocusSessionProvider>
       <KeyboardShortcuts />
       <div className="flex min-h-svh">
         {/* Desktop sidebar */}
@@ -30,6 +31,6 @@ export function AppShell({
       <BottomNav />
       {/* Floating quick-capture (mobile + desktop) */}
       <QuickCaptureFab />
-    </>
+    </FocusSessionProvider>
   );
 }

@@ -82,6 +82,37 @@ export const TASK_PRIORITY_META: Record<TaskPriority, { label: string }> = {
   LOW: { label: "Low" },
 };
 
+export const PROJECT_STATUS_META: Record<
+  ProjectStatus,
+  {
+    label: string;
+    badgeClass: string;
+    dotClass: string;
+  }
+> = {
+  ACTIVE: {
+    label: "Active",
+    badgeClass:
+      "bg-emerald-500/15 text-emerald-500 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]",
+    dotClass: "bg-emerald-500",
+  },
+  PAUSED: {
+    label: "Paused",
+    badgeClass: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+    dotClass: "bg-amber-500",
+  },
+  COMPLETED: {
+    label: "Completed",
+    badgeClass: "bg-blue-500/15 text-blue-500 border-blue-500/30",
+    dotClass: "bg-blue-500",
+  },
+  PARKED: {
+    label: "Parked",
+    badgeClass: "bg-muted text-muted-foreground",
+    dotClass: "bg-muted-foreground",
+  },
+};
+
 export const ENERGY_CATEGORY_META: Record<
   EnergyCategory,
   { label: string; emoji: string; placeholder: string }

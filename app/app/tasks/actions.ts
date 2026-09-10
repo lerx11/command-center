@@ -427,6 +427,30 @@ export async function toggleSubtaskAction(formData: FormData) {
   return { success: true as const };
 }
 
+// Update subtask title (inline editing).
+export async function updateSubtaskAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const id = String(formData.get("id"));
+  const title = String(formData.get("title") || "").trim();
+  const completed = formData.get("completed") === "true";
+
+  if (!title) return { error: "errors.invalidInput" };
+
+  const { error } = await supabase
+    .from("subtasks")
+    .update({ title, completed })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { error: "errors.couldNotUpdateSubtask" };
+
+  revalidatePath("/app/today");
+  revalidatePath("/app/projects");
+  revalidatePath("/app/focus");
+  return { success: true as const };
+}
+
 export async function deleteSubtaskAction(formData: FormData) {
   const { supabase, user } = await getUser();
   if (!user) return { error: "errors.notAuthenticated" };

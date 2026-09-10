@@ -1,90 +1,72 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatDuration } from "@/lib/utils";
 import { saveFocusSessionAction } from "@/app/app/tasks/actions";
 import { useT } from "@/components/i18n/i18n-provider";
+import { useFocusSession } from "@/components/focus/focus-session-provider";
 
 type Phase = "running" | "paused" | "completed";
 
-export function useFocusTimer(taskId: string | null) {
+export function useFocusTimer(taskId: string | null, taskTitle: string) {
   const t = useT();
+  const { session, startSession, pauseSession, resumeSession, clearSession } =
+    useFocusSession();
   const [phase, setPhase] = useState<Phase>("running");
-  const [seconds, setSeconds] = useState(0);
-  const startedAtRef = useRef<Date>(new Date());
-  // Wall-clock reference for accurate elapsed time — survives background throttling.
-  const lastTickRef = useRef<number>(Date.now());
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const tick = useCallback(() => {
-    const now = Date.now();
-    const elapsed = Math.floor((now - lastTickRef.current) / 1000);
-    if (elapsed > 0) {
-      lastTickRef.current += elapsed * 1000;
-      setSeconds((s) => s + elapsed);
-    }
-  }, []);
-
+  // If we have a stored session for this task, resume it
   useEffect(() => {
-    if (phase !== "running") {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
+    if (session && session.taskId === taskId && session.mode === "free") {
+      setPhase(session.isPaused ? "paused" : "running");
+    } else if (session && session.taskId !== taskId) {
+      // Different task — start fresh
+      startSession({
+        taskId: taskId!,
+        taskTitle,
+        startedAt: new Date().toISOString(),
+        durationMinutes: 0,
+        sessionNumber: 1,
+        mode: "free",
+      });
+      setPhase("running");
+    } else if (!session && taskId) {
+      startSession({
+        taskId,
+        taskTitle,
+        startedAt: new Date().toISOString(),
+        durationMinutes: 0,
+        sessionNumber: 1,
+        mode: "free",
+      });
+      setPhase("running");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId]);
 
-    lastTickRef.current = Date.now();
-    intervalRef.current = setInterval(tick, 1000);
+  const seconds = session?.elapsedSeconds ?? 0;
 
-    const onVisibilityChange = () => {
-      if (document.hidden) {
-        // Tab going to background — stop the interval to save CPU/battery.
-        // The wall-clock reference preserves elapsed time.
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      } else if (phase === "running") {
-        // Tab back to foreground — catch up elapsed time, then resume ticking.
-        tick();
-        if (!intervalRef.current) {
-          intervalRef.current = setInterval(tick, 1000);
-        }
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
+  const pause = useCallback(() => {
+    pauseSession();
+    setPhase("paused");
+  }, [pauseSession]);
 
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [phase, tick]);
-
-  const pause = useCallback(() => setPhase("paused"), []);
   const resume = useCallback(() => {
-    lastTickRef.current = Date.now();
+    resumeSession();
     setPhase("running");
-  }, []);
+  }, [resumeSession]);
 
   const complete = useCallback(async () => {
     setPhase("completed");
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    clearSession();
     const fd = new FormData();
     fd.set("taskId", taskId ?? "null");
-    fd.set("startedAt", startedAtRef.current.toISOString());
+    fd.set("startedAt", session?.startedAt ?? new Date().toISOString());
     fd.set("durationSeconds", String(seconds));
     const res = await saveFocusSessionAction(fd);
     if (res?.error) toast.error(t(res.error));
     else toast.success(t("toasts.focusSessionCompleted"));
-  }, [seconds, taskId, t]);
+  }, [seconds, taskId, session, clearSession, t]);
 
   return {
     phase,

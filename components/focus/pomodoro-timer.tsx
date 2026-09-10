@@ -38,7 +38,7 @@ export function PomodoroTimer({ task, subtasks }: { task: Task; subtasks: Subtas
     nextSession,
     exitToToday,
     moveTaskToTomorrow,
-  } = usePomodoroTimer(task.id);
+  } = usePomodoroTimer(task.id, task.title);
 
   // NEXT ACTION: explicit field takes priority, else first incomplete subtask.
   const firstPendingSubtask = subtasks.find((s) => !s.completed);

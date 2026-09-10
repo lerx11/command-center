@@ -121,6 +121,10 @@
     "notFound": "Task not found.",
     "sessionSaved": "Session saved. Returning to today…",
     "shortcutHint": "Space — pause / resume · Esc — exit",
+    "miniFocus": "Focus",
+    "recoveryPrompt": "You had an active focus session. Continue?",
+    "recoveryResume": "Continue session",
+    "recoveryDiscard": "Discard session",
     "pomodoro": {
       "title": "Pomodoro",
       "sessionLabel": "Session {n}/{total}",

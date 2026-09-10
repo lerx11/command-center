@@ -122,6 +122,10 @@
     "notFound": "Задача не найдена.",
     "sessionSaved": "Сессия сохранена. Возврат на Сегодня…",
     "shortcutHint": "Пробел — пауза / продолжить · Esc — выход",
+    "miniFocus": "Фокус",
+    "recoveryPrompt": "У вас была активная сессия фокуса. Продолжить?",
+    "recoveryResume": "Продолжить сессию",
+    "recoveryDiscard": "Отменить сессию",
     "pomodoro": {
       "title": "Pomodoro",
       "sessionLabel": "Сессия {n}/{total}",

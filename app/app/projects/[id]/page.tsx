@@ -9,6 +9,7 @@ import { Plus } from "lucide-react";
 import { TaskActionsClient } from "./task-actions-client";
 import {
   PROJECT_CATEGORY_META,
+  PROJECT_STATUS_META,
   TASK_TYPE_META,
 } from "@/lib/constants";
 import type { Project, Subtask, Task } from "@/lib/types";
@@ -89,8 +90,12 @@ export default async function ProjectPage({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="uppercase">
-              {p.status}
+            <Badge
+              variant="outline"
+              className={`uppercase ${PROJECT_STATUS_META[p.status]?.badgeClass ?? ""}`}
+            >
+              <span className={`mr-1 inline-block size-1.5 rounded-full ${PROJECT_STATUS_META[p.status]?.dotClass ?? ""}`} />
+              {PROJECT_STATUS_META[p.status]?.label ?? p.status}
             </Badge>
             <ProjectForm
               project={p}

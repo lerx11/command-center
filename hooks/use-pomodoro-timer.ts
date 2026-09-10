@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { saveFocusSessionAction, moveTaskToTomorrowAction } from "@/app/app/tasks/actions";
 import { formatDuration } from "@/lib/utils";
 import { useT } from "@/components/i18n/i18n-provider";
+import { useFocusSession } from "@/components/focus/focus-session-provider";
 
 // Pomodoro configuration — see locales/ru.json focus.pomodoro.
 const DURATIONS = [25, 50, 90] as const;
@@ -77,25 +78,48 @@ type Phase =
   | "break" // break countdown
   | "breakDone"; // break ended, awaiting "continue"
 
-export function usePomodoroTimer(taskId: string | null) {
+export function usePomodoroTimer(taskId: string | null, taskTitle: string) {
   const t = useT();
+  const { session, startSession, pauseSession, resumeSession, clearSession } =
+    useFocusSession();
   const [duration, setDurationState] = useState<PomodoroDuration>(DEFAULT_DURATION);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [secondsLeft, setSecondsLeft] = useState(DEFAULT_DURATION * 60);
-  const [sessionNumber, setSessionNumber] = useState(1); // 1-based; resets at LONG_BREAK.
+  const [sessionNumber, setSessionNumber] = useState(1);
   const [isLongBreak, setIsLongBreak] = useState(false);
-  const startedAtRef = useRef<Date | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(DEFAULT_DURATION * 60);
+  const [remainingAtPause, setRemainingAtPause] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Wall-clock reference — survives background tab throttling for accurate countdowns.
-  const lastTickRef = useRef<number>(0);
+  const wallRef = useRef<number>(0);
 
-  // On mount: read saved duration from localStorage (client-only to avoid hydration mismatch).
+  // On mount: read saved duration
   useEffect(() => {
     setDurationState(getDefaultDuration());
     setSecondsLeft(getDefaultDuration() * 60);
   }, []);
 
-  // Countdown tick — only runs in running/break phases.
+  // Restore from global session on mount
+  useEffect(() => {
+    if (session && session.taskId === taskId && session.mode === "pomodoro") {
+      // Calculate secondsLeft from elapsed
+      const totalSeconds = session.durationMinutes * 60;
+      const elapsed = session.elapsedSeconds;
+      const remaining = Math.max(0, totalSeconds - elapsed);
+      if (remaining > 0 && !session.isPaused) {
+        setPhase("running");
+        setSecondsLeft(remaining);
+      } else if (remaining > 0 && session.isPaused) {
+        setPhase("paused");
+        setSecondsLeft(remaining);
+      } else {
+        // Session ended while away
+        handleSessionEnd();
+      }
+      setSessionNumber(session.sessionNumber);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Countdown ticking
   useEffect(() => {
     if (phase !== "running" && phase !== "break") {
       if (intervalRef.current) {
@@ -105,12 +129,12 @@ export function usePomodoroTimer(taskId: string | null) {
       return;
     }
 
-    lastTickRef.current = Date.now();
+    wallRef.current = Date.now();
     intervalRef.current = setInterval(() => {
       const now = Date.now();
-      const elapsed = Math.floor((now - lastTickRef.current) / 1000);
+      const elapsed = Math.floor((now - wallRef.current) / 1000);
       if (elapsed > 0) {
-        lastTickRef.current += elapsed * 1000;
+        wallRef.current += elapsed * 1000;
         setSecondsLeft((s) => {
           const next = s - elapsed;
           if (next <= 0) {
@@ -123,7 +147,6 @@ export function usePomodoroTimer(taskId: string | null) {
       }
     }, 1000);
 
-    // Pause ticking when tab is hidden — saves CPU/battery; wall-clock ref catches up on return.
     const onVisibilityChange = () => {
       if (document.hidden) {
         if (intervalRef.current) {
@@ -131,11 +154,10 @@ export function usePomodoroTimer(taskId: string | null) {
           intervalRef.current = null;
         }
       } else if (phase === "running" || phase === "break") {
-        // Tab back — catch up elapsed time, resume ticking.
         const now = Date.now();
-        const elapsed = Math.floor((now - lastTickRef.current) / 1000);
+        const elapsed = Math.floor((now - wallRef.current) / 1000);
         if (elapsed > 0) {
-          lastTickRef.current += elapsed * 1000;
+          wallRef.current += elapsed * 1000;
           setSecondsLeft((s) => {
             const next = s - elapsed;
             if (next <= 0) {
@@ -149,9 +171,9 @@ export function usePomodoroTimer(taskId: string | null) {
         if (!intervalRef.current) {
           intervalRef.current = setInterval(() => {
             const now2 = Date.now();
-            const el = Math.floor((now2 - lastTickRef.current) / 1000);
+            const el = Math.floor((now2 - wallRef.current) / 1000);
             if (el > 0) {
-              lastTickRef.current += el * 1000;
+              wallRef.current += el * 1000;
               setSecondsLeft((s) => {
                 const next = s - el;
                 if (next <= 0) {
@@ -185,37 +207,50 @@ export function usePomodoroTimer(taskId: string | null) {
   }, [phase]);
 
   const start = useCallback(() => {
-    startedAtRef.current = new Date();
+    const startedAt = new Date().toISOString();
+    startSession({
+      taskId: taskId!,
+      taskTitle,
+      startedAt,
+      durationMinutes: duration,
+      sessionNumber: 1,
+      mode: "pomodoro",
+    });
     setSecondsLeft(duration * 60);
     setPhase("running");
-  }, [duration]);
+  }, [duration, taskId, taskTitle, startSession]);
 
   const pause = useCallback(() => {
-    if (phase === "running") setPhase("paused");
-  }, [phase]);
+    if (phase === "running") {
+      pauseSession();
+      setRemainingAtPause(secondsLeft);
+      setPhase("paused");
+    }
+  }, [phase, secondsLeft, pauseSession]);
 
   const resume = useCallback(() => {
-    if (phase === "paused") setPhase("running");
-  }, [phase]);
+    if (phase === "paused") {
+      resumeSession();
+      setPhase("running");
+    }
+  }, [phase, resumeSession]);
 
-  // Called when the Pomodoro countdown reaches 0 (or user hits Complete).
   const handleSessionEnd = useCallback(async () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     playChime();
 
-    // Persist the focus_session (same storage path as the free timer).
-    if (taskId && startedAtRef.current) {
+    if (taskId && session) {
       const fd = new FormData();
       fd.set("taskId", taskId);
-      fd.set("startedAt", startedAtRef.current.toISOString());
+      fd.set("startedAt", session.startedAt);
       fd.set("durationSeconds", String(duration * 60 - secondsLeft));
       const res = await saveFocusSessionAction(fd);
       if (res?.error) toast.error(t(res.error));
     }
+    clearSession();
     setPhase("sessionComplete");
-  }, [duration, secondsLeft, taskId, t]);
+  }, [duration, secondsLeft, taskId, session, clearSession, t]);
 
-  // Called when user explicitly completes a session early.
   const completeEarly = useCallback(() => {
     handleSessionEnd();
   }, [handleSessionEnd]);
@@ -238,20 +273,27 @@ export function usePomodoroTimer(taskId: string | null) {
     setPhase("breakDone");
   }, []);
 
-  // After "Continue" → start the next pomodoro session.
   const nextSession = useCallback(() => {
     const next = isLongBreak ? 1 : sessionNumber + 1;
     setSessionNumber(next);
-    startedAtRef.current = new Date();
+    const startedAt = new Date().toISOString();
+    startSession({
+      taskId: taskId!,
+      taskTitle,
+      startedAt,
+      durationMinutes: duration,
+      sessionNumber: next,
+      mode: "pomodoro",
+    });
     setSecondsLeft(duration * 60);
     setPhase("running");
-  }, [duration, isLongBreak, sessionNumber]);
+  }, [duration, isLongBreak, sessionNumber, taskId, taskTitle, startSession]);
 
-  // Move the task to tomorrow (uses the existing server action) and exit.
   const exitToToday = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    clearSession();
     setPhase("idle");
-  }, []);
+  }, [clearSession]);
 
   const moveTaskToTomorrow = useCallback(async () => {
     if (!taskId) return;

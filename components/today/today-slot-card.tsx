@@ -123,9 +123,10 @@ export function TodaySlotCard({
           <TaskPicker
             slot={slot}
             candidates={candidates}
+            projects={projects}
             trigger={
               <Button size="sm" variant="outline" className="mt-4 w-full">
-                {t("common.choose")}
+                {t("common.chooseTask")}
               </Button>
             }
           />

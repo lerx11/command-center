@@ -11,7 +11,12 @@ import {
   TASK_TYPE_META,
   TASK_PRIORITY_META,
 } from "@/lib/constants";
-import { createTaskAction, updateTaskAction } from "@/app/app/tasks/actions";
+import {
+  createTaskAction,
+  updateTaskAction,
+  addToTodayAction,
+  parkTaskAction,
+} from "@/app/app/tasks/actions";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +56,7 @@ export function TaskForm({
   const t = useT();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [createdTaskId, setCreatedTaskId] = useState<string | null>(null);
 
   const form = useForm<TaskValues>({
     resolver: zodResolver(taskSchema),
@@ -82,25 +88,112 @@ export function TaskForm({
     if (task) fd.set("id", task.id);
 
     startTransition(async () => {
-      const res = task
-        ? await updateTaskAction(fd)
-        : await createTaskAction(fd);
-      if (res?.error) {
-        toast.error(t(res.error));
-        return;
-      }
-      setOpen(false);
-      form.reset();
-      toast.success(task ? t("toasts.taskUpdated") : t("toasts.taskCreated"));
-      if (!task) {
-        // Best-effort: caller can route to today/project/park.
-        onCreated?.("");
+      if (task) {
+        const res = await updateTaskAction(fd);
+        if (res?.error) {
+          toast.error(t(res.error));
+          return;
+        }
+        form.reset();
+        toast.success(t("toasts.taskUpdated"));
+        setOpen(false);
+      } else {
+        const res = await createTaskAction(fd);
+        if (res?.error) {
+          toast.error(t(res.error));
+          return;
+        }
+        form.reset();
+        toast.success(t("toasts.taskCreated"));
+        if (res.success && res.taskId) {
+          setCreatedTaskId(res.taskId);
+          onCreated?.(res.taskId);
+        }
       }
     });
   };
 
+  const addAndClose = () => {
+    if (!createdTaskId) return;
+    const fd = new FormData();
+    fd.set("taskId", createdTaskId);
+    startTransition(async () => {
+      const res = await addToTodayAction(fd);
+      if (res?.error) {
+        toast.error(t(res.error));
+        return;
+      }
+      toast.success(t("toasts.addedToToday"));
+      setCreatedTaskId(null);
+      setOpen(false);
+    });
+  };
+
+  const parkAndClose = () => {
+    if (!createdTaskId) return;
+    const fd = new FormData();
+    fd.set("id", createdTaskId);
+    fd.set("status", "PARKED");
+    startTransition(async () => {
+      const res = await parkTaskAction(fd);
+      if (res?.error) {
+        toast.error(t(res.error));
+        return;
+      }
+      toast.success(t("toasts.movedToParking"));
+      setCreatedTaskId(null);
+      setOpen(false);
+    });
+  };
+
+  const keepAndClose = () => {
+    setCreatedTaskId(null);
+    setOpen(false);
+  };
+
   const watchType = form.watch("type");
   const watchProject = form.watch("project_id");
+
+  // Post-creation options screen.
+  if (createdTaskId) {
+    return (
+      <Dialog open={open} onOpenChange={(v) => { if (!v) keepAndClose(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("taskForm.postCreateTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("taskForm.postCreateDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Button
+              className="w-full"
+              onClick={addAndClose}
+              disabled={pending}
+            >
+              {t("taskForm.addToToday")}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={keepAndClose}
+              disabled={pending}
+            >
+              {t("taskForm.keepInProject")}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={parkAndClose}
+              disabled={pending}
+            >
+              {t("common.park")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

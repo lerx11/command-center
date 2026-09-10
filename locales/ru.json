@@ -30,7 +30,12 @@
     "today": "Сегодня",
     "tomorrow": "Завтра",
     "none": "— Нет —",
-    "noProject": "Без проекта"
+    "noProject": "Без проекта",
+    "addToToday": "Добавить в Сегодня",
+    "addToTodayShort": "+ Today",
+    "inToday": "В Today",
+    "removeFromToday": "Убрать из Today",
+    "chooseTask": "Выбрать задачу"
   },
   "nav": {
     "today": "Сегодня",
@@ -220,7 +225,11 @@
     "typeLabel": "Тип",
     "priorityLabel": "Приоритет",
     "dueDateLabel": "Срок",
-    "placeholderNoProject": "Без проекта"
+    "placeholderNoProject": "Без проекта",
+    "postCreateTitle": "Задача создана!",
+    "postCreateDescription": "Что дальше с этой задачей?",
+    "addToToday": "Добавить в Сегодня",
+    "keepInProject": "Оставить в проекте"
   },
   "taskMenu": {
     "actions": "Действия с задачей"
@@ -229,7 +238,8 @@
     "title": "Выбрать задачу",
     "description": "Выберите одну задачу для этого слота.",
     "searchPlaceholder": "Поиск задач…",
-    "noTasks": "Нет доступных задач. Сначала создайте одну."
+    "noTasks": "Нет доступных задач. Сначала создайте одну.",
+    "allProjects": "Все проекты"
   },
   "energy": {
     "add": "Добавить",
@@ -296,6 +306,7 @@
     "saved": "Сохранено ✓",
     "done": "Готово ✓",
     "addedToToday": "Добавлено в Сегодня ✓",
+    "removedFromToday": "Убрано из Сегодня ✓",
     "taskUpdated": "Задача обновлена ✓",
     "taskCreated": "Задача создана ✓",
     "taskCompleted": "Задача выполнена ✓",
@@ -329,6 +340,7 @@
     "couldNotUpdateEnergyTask": "Не удалось обновить задачу энергии.",
     "couldNotDeleteEnergyTask": "Не удалось удалить задачу энергии.",
     "couldNotSaveFocusSession": "Не удалось сохранить сессию фокуса.",
+    "taskNotFound": "Задача не найдена.",
     "titleRequired": "Введите название",
     "whatCameToMind": "Что пришло в голову?",
     "couldNotSaveIdea": "Не удалось сохранить идею.",

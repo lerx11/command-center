@@ -2,7 +2,13 @@
 
 import { useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Trash2, ParkingSquare } from "lucide-react";
+import {
+  MoreHorizontal,
+  Trash2,
+  ParkingSquare,
+  CalendarPlus,
+  CalendarMinus,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +20,12 @@ import { Button } from "@/components/ui/button";
 import {
   deleteTaskAction,
   parkTaskAction,
+  addToTodayAction,
+  removeFromTodayAction,
 } from "@/app/app/tasks/actions";
 import { TaskForm } from "./task-form";
 import { useT } from "@/components/i18n/i18n-provider";
+import { todayISO } from "@/lib/utils";
 import type { Project, Task } from "@/lib/types";
 
 export function TaskMenu({
@@ -31,6 +40,10 @@ export function TaskMenu({
   const t = useT();
   const [pending, startTransition] = useTransition();
 
+  // A task is "in today" if it's IN_PROGRESS with today's due_date.
+  const inToday =
+    task.status === "IN_PROGRESS" && task.due_date === todayISO();
+
   const park = () => {
     const fd = new FormData();
     fd.set("id", task.id);
@@ -39,6 +52,26 @@ export function TaskMenu({
       const res = await parkTaskAction(fd);
       if (res?.error) toast.error(t(res.error));
       else toast.success(t("toasts.movedToParking"));
+    });
+  };
+
+  const addToToday = () => {
+    const fd = new FormData();
+    fd.set("taskId", task.id);
+    startTransition(async () => {
+      const res = await addToTodayAction(fd);
+      if (res?.error) toast.error(t(res.error));
+      else toast.success(t("toasts.addedToToday"));
+    });
+  };
+
+  const removeFromToday = () => {
+    const fd = new FormData();
+    fd.set("taskId", task.id);
+    startTransition(async () => {
+      const res = await removeFromTodayAction(fd);
+      if (res?.error) toast.error(t(res.error));
+      else toast.success(t("toasts.removedFromToday"));
     });
   };
 
@@ -80,21 +113,22 @@ export function TaskMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {withEditButton && (
-            <>
-              <DropdownMenuItem onClick={park}>
-                <ParkingSquare className="size-4" />
-                {t("common.park")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          {!withEditButton && (
-            <DropdownMenuItem onClick={park}>
-              <ParkingSquare className="size-4" />
-              {t("common.park")}
+          {inToday ? (
+            <DropdownMenuItem onClick={removeFromToday}>
+              <CalendarMinus className="size-4" />
+              {t("common.removeFromToday")}
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={addToToday}>
+              <CalendarPlus className="size-4" />
+              {t("common.addToToday")}
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem onClick={park}>
+            <ParkingSquare className="size-4" />
+            {t("common.park")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={del}
             className="text-destructive focus:text-destructive"

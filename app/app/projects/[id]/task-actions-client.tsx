@@ -2,11 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { CalendarPlus, CalendarCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { TaskMenu } from "@/components/tasks/task-menu";
-import { setTaskStatusAction } from "@/app/app/tasks/actions";
+import {
+  setTaskStatusAction,
+  addToTodayAction,
+  removeFromTodayAction,
+} from "@/app/app/tasks/actions";
 import { TASK_TYPE_META } from "@/lib/constants";
 import { useT } from "@/components/i18n/i18n-provider";
+import { todayISO } from "@/lib/utils";
 import type { Project, Task } from "@/lib/types";
 
 export function TaskActionsClient({
@@ -19,6 +26,8 @@ export function TaskActionsClient({
   const t = useT();
   const [pending, startTransition] = useTransition();
   const done = task.status === "DONE";
+  const inToday =
+    task.status === "IN_PROGRESS" && task.due_date === todayISO();
 
   const toggle = () => {
     const fd = new FormData();
@@ -28,6 +37,21 @@ export function TaskActionsClient({
       const res = await setTaskStatusAction(fd);
       if (res?.error) toast.error(t(res.error));
       else if (!done) toast.success(t("toasts.taskCompleted"));
+    });
+  };
+
+  const toggleToday = () => {
+    const fd = new FormData();
+    fd.set("taskId", task.id);
+    startTransition(async () => {
+      const res = inToday
+        ? await removeFromTodayAction(fd)
+        : await addToTodayAction(fd);
+      if (res?.error) toast.error(t(res.error));
+      else
+        toast.success(
+          inToday ? t("toasts.removedFromToday") : t("toasts.addedToToday")
+        );
     });
   };
 
@@ -73,6 +97,23 @@ export function TaskActionsClient({
       <Badge variant="secondary" className="text-[10px]">
         {meta.emoji} {meta.short}
       </Badge>
+      <Button
+        size="sm"
+        variant={inToday ? "secondary" : "outline"}
+        onClick={toggleToday}
+        disabled={pending}
+        className="shrink-0"
+      >
+        {inToday ? (
+          <>
+            <CalendarCheck className="size-3.5" /> {t("common.inToday")}
+          </>
+        ) : (
+          <>
+            <CalendarPlus className="size-3.5" /> {t("common.addToTodayShort")}
+          </>
+        )}
+      </Button>
       <TaskMenu task={task} projects={projects} />
     </div>
   );

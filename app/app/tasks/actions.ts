@@ -29,18 +29,22 @@ export async function createTaskAction(formData: FormData) {
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "errors.invalidInput" };
 
-  const { error } = await supabase.from("tasks").insert({
-    user_id: user.id,
-    ...parsed.data,
-    description: parsed.data.description ?? "",
-    project_id: parsed.data.project_id ?? null,
-    due_date: parsed.data.due_date || null,
-  });
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({
+      user_id: user.id,
+      ...parsed.data,
+      description: parsed.data.description ?? "",
+      project_id: parsed.data.project_id ?? null,
+      due_date: parsed.data.due_date || null,
+    })
+    .select("id")
+    .single();
   if (error) return { error: "errors.couldNotCreateTask" };
 
   revalidatePath("/app/today");
   revalidatePath("/app/projects");
-  return { success: true as const };
+  return { success: true as const, taskId: data.id };
 }
 
 export async function updateTaskAction(formData: FormData) {
@@ -356,6 +360,83 @@ export async function saveFocusSessionAction(formData: FormData) {
   if (error) return { error: "errors.couldNotSaveFocusSession" };
 
   revalidatePath("/app/dashboard");
+  revalidatePath("/app/today");
+  return { success: true as const };
+}
+
+// Add a task to today's plan — auto-assigns slot based on task type.
+export async function addToTodayAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const taskId = String(formData.get("taskId"));
+
+  // Fetch the task to determine its type.
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("type")
+    .eq("id", taskId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!task) return { error: "errors.taskNotFound" };
+
+  const typeToSlot: Record<string, string> = {
+    BIG_WIN: "big_win",
+    MONEY: "money",
+    ASSET: "asset",
+    OTHER: "big_win",
+  };
+  const slot = typeToSlot[task.type] ?? "big_win";
+
+  // Delegate to setDailyPlanTaskAction logic.
+  const fd = new FormData();
+  fd.set("taskId", taskId);
+  fd.set("slot", slot);
+  return setDailyPlanTaskAction(fd);
+}
+
+// Remove a task from today's plan (finds and clears whichever slot it occupies).
+export async function removeFromTodayAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const taskId = String(formData.get("taskId"));
+  const date = todayISO();
+
+  const { data: plan } = await supabase
+    .from("daily_plans")
+    .select("id, big_win_task_id, money_task_id, asset_task_id")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .maybeSingle();
+  if (!plan) return { success: true as const };
+
+  const planRow = plan as unknown as Record<string, string | null>;
+  const slots: Array<[string, string | null]> = [
+    ["big_win", planRow.big_win_task_id],
+    ["money", planRow.money_task_id],
+    ["asset", planRow.asset_task_id],
+  ];
+
+  let cleared = false;
+  for (const [slot, id] of slots) {
+    if (id === taskId) {
+      const fd = new FormData();
+      fd.set("slot", slot);
+      await clearDailyPlanSlotAction(fd);
+      cleared = true;
+      break;
+    }
+  }
+
+  if (cleared) {
+    await supabase
+      .from("tasks")
+      .update({ status: "TODO" })
+      .eq("id", taskId)
+      .eq("user_id", user.id);
+  }
+
   revalidatePath("/app/today");
   return { success: true as const };
 }

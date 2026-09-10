@@ -30,7 +30,12 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "none": "— None —",
-    "noProject": "No project"
+    "noProject": "No project",
+    "addToToday": "Add to Today",
+    "addToTodayShort": "+ Today",
+    "inToday": "In Today",
+    "removeFromToday": "Remove from Today",
+    "chooseTask": "Choose task"
   },
   "nav": {
     "today": "Today",
@@ -219,7 +224,11 @@
     "typeLabel": "Type",
     "priorityLabel": "Priority",
     "dueDateLabel": "Due date",
-    "placeholderNoProject": "No project"
+    "placeholderNoProject": "No project",
+    "postCreateTitle": "Task created!",
+    "postCreateDescription": "What's next for this task?",
+    "addToToday": "Add to Today",
+    "keepInProject": "Keep in Project"
   },
   "taskMenu": {
     "actions": "Task actions"
@@ -228,7 +237,8 @@
     "title": "Choose a task",
     "description": "Pick the one task that matters for this slot.",
     "searchPlaceholder": "Search tasks…",
-    "noTasks": "No tasks available. Create one first."
+    "noTasks": "No tasks available. Create one first.",
+    "allProjects": "All projects"
   },
   "energy": {
     "add": "Add",
@@ -295,6 +305,7 @@
     "saved": "Saved ✓",
     "done": "Done ✓",
     "addedToToday": "Added to today ✓",
+    "removedFromToday": "Removed from today ✓",
     "taskUpdated": "Task updated ✓",
     "taskCreated": "Task created ✓",
     "taskCompleted": "Task completed ✓",
@@ -328,6 +339,7 @@
     "couldNotUpdateEnergyTask": "Could not update energy task.",
     "couldNotDeleteEnergyTask": "Could not delete energy task.",
     "couldNotSaveFocusSession": "Could not save focus session.",
+    "taskNotFound": "Task not found.",
     "titleRequired": "Title required",
     "whatCameToMind": "What came to mind?",
     "couldNotSaveIdea": "Could not save the idea.",

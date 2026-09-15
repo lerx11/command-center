@@ -25,6 +25,7 @@ export type Project = {
   category: ProjectCategory;
   status: ProjectStatus;
   position: number;
+  goal_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -132,4 +133,25 @@ export type CashTarget = {
   expected: number | null;
   created_at: string;
   updated_at: string;
+};
+
+export type GoalStatus = "ACTIVE" | "ACHIEVED" | "LOCKED";
+
+export type Goal = {
+  id: string;
+  user_id: string;
+  title: string;
+  min_amount: number;
+  max_amount: number;
+  position: number;
+  status: GoalStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Achievement = {
+  id: string;
+  user_id: string;
+  key: string;
+  unlocked_at: string;
 };

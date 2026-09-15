@@ -1,9 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
-import { todayISO, formatDuration, formatMoney } from "@/lib/utils";
+import { todayISO, formatDuration, formatMoney, cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
-import { Crosshair, Coins, CheckCircle2, Timer, Wallet } from "lucide-react";
+import { Crosshair, Coins, CheckCircle2, Timer, Wallet, Trophy } from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -52,6 +52,7 @@ export default async function DashboardPage() {
     { data: weekFocus },
     { data: todayReview },
     { data: weekReviews },
+    { data: achRows },
   ] = await Promise.all([
     run("BIG_WIN", "today"),
     run("MONEY", "today"),
@@ -83,6 +84,10 @@ export default async function DashboardPage() {
       .select("money_moved")
       .eq("user_id", user.id)
       .gte("date", startOfWeek.toISOString().slice(0, 10)),
+    supabase
+      .from("achievements")
+      .select("key")
+      .eq("user_id", user.id),
   ]);
 
   const todayFocusSeconds = (todayFocus ?? []).reduce(
@@ -98,6 +103,15 @@ export default async function DashboardPage() {
     (acc, r: { money_moved: number | null }) => acc + (r.money_moved ?? 0),
     0
   );
+
+  const unlockedKeys = new Set((achRows ?? []).map((r) => (r as { key: string }).key));
+  const allAchievements = [
+    { key: "first_task", icon: "✓", title: t("achievements.firstTask"), hint: t("achievements.firstTaskHint") },
+    { key: "core_master", icon: "🎉", title: t("achievements.coreMaster"), hint: t("achievements.coreMasterHint") },
+    { key: "pomodoro_master", icon: "🍅", title: t("achievements.pomodoroMaster"), hint: t("achievements.pomodoroMasterHint") },
+    { key: "streak_7", icon: "🔥", title: t("achievements.streak7"), hint: t("achievements.streak7Hint") },
+    { key: "streak_30", icon: "🏆", title: t("achievements.streak30"), hint: t("achievements.streak30Hint") },
+  ];
 
   const metrics = [
     {
@@ -188,6 +202,40 @@ export default async function DashboardPage() {
           );
         })}
       </div>
+
+      {/* Achievements */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Trophy className="size-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">{t("achievements.title")}</h2>
+        </div>
+        {unlockedKeys.size === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("achievements.nothingYet")}</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {allAchievements.map((a) => {
+              const unlocked = unlockedKeys.has(a.key);
+              return (
+                <Card
+                  key={a.key}
+                  className={cn(
+                    "border-border/60 transition-colors",
+                    unlocked ? "bg-primary/5" : "opacity-50"
+                  )}
+                >
+                  <CardContent className="flex items-start gap-3 p-4">
+                    <span className="text-2xl">{a.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold">{a.title}</p>
+                      <p className="text-xs text-muted-foreground">{a.hint}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

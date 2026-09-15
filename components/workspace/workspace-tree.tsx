@@ -12,6 +12,9 @@ import {
   Focus,
   Maximize2,
   Minimize2,
+  Flag,
+  Lock,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +28,7 @@ import {
 import type {
   CashTarget as CashTargetType,
   EnergyTask,
+  Goal,
   Project,
   Subtask,
   Task,
@@ -79,14 +83,30 @@ function progressBarColor(done: number, total: number) {
   return "bg-muted-foreground/30";
 }
 
+function splitProjects(projects: Project[]) {
+  return {
+    money: projects.filter(
+      (p) => p.category === "CASH_NOW" || p.category === "CASH_ENGINE"
+    ),
+    asset: projects.filter((p) => p.category === "ASSET"),
+    parking: projects.filter((p) => p.category === "PARKING"),
+  };
+}
+
+function goalRank(status: string) {
+  return status === "ACTIVE" ? 0 : status === "ACHIEVED" ? 1 : 2;
+}
+
 export function WorkspaceTree({
   cashTarget,
+  goals,
   projects,
   tasks,
   subtasks,
   energyTasks,
 }: {
   cashTarget: CashTargetType | null;
+  goals?: Goal[];
   projects: Project[];
   tasks: Task[];
   subtasks: Subtask[];
@@ -94,101 +114,57 @@ export function WorkspaceTree({
 }) {
   const t = useT();
 
-  // Group projects by branch
-  const moneyProjects = projects.filter(
-    (p) => p.category === "CASH_NOW" || p.category === "CASH_ENGINE"
-  );
-  const assetProjects = projects.filter((p) => p.category === "ASSET");
-  const parkingProjects = projects.filter((p) => p.category === "PARKING");
+  const hasGoals = (goals?.length ?? 0) > 0;
+  const activeGoal = hasGoals
+    ? goals!.find((g) => g.status === "ACTIVE") ?? goals![0]
+    : null;
+  const sortedGoals = hasGoals
+    ? [...goals!].sort((a, b) => {
+        const r = goalRank(a.status) - goalRank(b.status);
+        return r !== 0 ? r : a.position - b.position;
+      })
+    : null;
+
+  // Projects belonging to a goal: explicitly linked, or (when null) the active goal.
+  const goalProjects = (g: Goal) =>
+    projects.filter(
+      (p) => p.goal_id === g.id || (p.goal_id == null && g.status === "ACTIVE")
+    );
+
   const hasAnyProjects = projects.length > 0;
 
-  // Build a list of all expandable node IDs for expand-all
-  const allNodeIds = useMemo(() => {
-    const ids = new Set<string>();
-    const branches: [BranchKey, Project[]][] = [
-      ["money", moneyProjects],
-      ["asset", assetProjects],
-      ["parking", parkingProjects],
-    ];
-    for (const [key, projs] of branches) {
-      if (projs.length > 0) ids.add(`branch:${key}`);
-      for (const p of projs) {
-        const active = tasks.filter(
-          (t) =>
-            t.project_id === p.id &&
-            (t.status === "TODO" || t.status === "IN_PROGRESS")
-        );
-        if (active.length > 0) ids.add(`project:${p.id}`);
-      }
+  // Collapsed state for the top-level goal sections.
+  const [collapsedGoals, setCollapsedGoals] = useState<Set<string>>(() => {
+    const s = new Set<string>();
+    if (hasGoals) {
+      for (const g of goals!) if (g.status !== "ACTIVE") s.add(g.id);
     }
-    if (energyTasks.length > 0) ids.add("branch:energy");
-    return ids;
-  }, [moneyProjects, assetProjects, parkingProjects, energyTasks, tasks]);
+    return s;
+  });
 
-  // Expanded state — Set of node IDs
-  const [expanded, setExpanded] = useState<Set<string>>(
-    () => new Set(allNodeIds) // expanded by default
-  );
-
-  // Focus mode — when set, only this project's branch is shown
-  const [focusProjectId, setFocusProjectId] = useState<string | null>(null);
-
-  const toggle = useCallback((id: string) => {
-    setExpanded((prev) => {
+  const toggleGoal = (id: string) =>
+    setCollapsedGoals((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }, []);
 
-  const collapseAll = useCallback(() => {
-    setExpanded(new Set());
-    setFocusProjectId(null);
-  }, []);
-
-  const expandAll = useCallback(() => {
-    setExpanded(new Set(allNodeIds));
-    setFocusProjectId(null);
-  }, [allNodeIds]);
-
-  const focusProject = useCallback(
-    (projectId: string) => {
-      // Toggle: if already focused on this project, reset to full tree
-      setFocusProjectId((prev) => {
-        if (prev === projectId) {
-          setExpanded(new Set(allNodeIds));
-          return null;
-        }
-        // Focus on new project — expand only the path to it
-        const next = new Set<string>();
-        const project = projects.find((p) => p.id === projectId);
-        if (project) {
-          if (project.category === "CASH_NOW" || project.category === "CASH_ENGINE")
-            next.add("branch:money");
-          else if (project.category === "ASSET") next.add("branch:asset");
-          else if (project.category === "PARKING") next.add("branch:parking");
-          next.add(`project:${projectId}`);
-        }
-        setExpanded(next);
-        return projectId;
-      });
-    },
-    [projects, allNodeIds]
+  const [treeSeed, setTreeSeed] = useState(0);
+  const [expandMode, setExpandMode] = useState<"default" | "all" | "none">(
+    "default"
   );
+  const collapseAll = () => {
+    setExpandMode("none");
+    setTreeSeed((v) => v + 1);
+  };
+  const expandAll = () => {
+    setExpandMode("all");
+    setTreeSeed((v) => v + 1);
+  };
 
-  const showAll = useCallback(() => {
-    setFocusProjectId(null);
-    setExpanded(new Set(allNodeIds));
-  }, [allNodeIds]);
-
-  const isExpanded = (id: string) => expanded.has(id);
-
-  // Determine which branches to render
-  const showMoney = !focusProjectId || moneyProjects.some((p) => p.id === focusProjectId);
-  const showAsset = !focusProjectId || assetProjects.some((p) => p.id === focusProjectId);
-  const showEnergy = !focusProjectId;
-  const showParking = !focusProjectId || parkingProjects.some((p) => p.id === focusProjectId);
+  // Single-goal fallback (no goals table): all projects belong to one scope.
+  const fallbackProjects = splitProjects(projects);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 sm:py-8">
@@ -211,17 +187,30 @@ export function WorkspaceTree({
           <Button size="sm" variant="outline" onClick={expandAll}>
             <Maximize2 className="size-3.5" /> {t("workspace.expandAll")}
           </Button>
-          {focusProjectId && (
-            <Button size="sm" variant="secondary" onClick={showAll}>
-              <Focus className="size-3.5" /> {t("workspace.showAll")}
-            </Button>
-          )}
         </div>
       )}
 
       {/* Goal node */}
-      {cashTarget ? (
-        <div className="rounded-lg border-2 border-foreground/20 bg-foreground/5 px-4 py-3">
+      {hasGoals && activeGoal ? (
+        <div className="group rounded-lg border-2 border-foreground/20 bg-foreground/5 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Flag className="size-5 text-foreground" />
+            <div className="flex-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t("goals.currentTarget")}
+              </p>
+              <p className="text-lg font-bold">
+                {formattedAmount(activeGoal.min_amount)} –{" "}
+                {formattedAmount(activeGoal.max_amount)}
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {t("goals.active")}
+            </span>
+          </div>
+        </div>
+      ) : cashTarget ? (
+        <div className="group rounded-lg border-2 border-foreground/20 bg-foreground/5 px-4 py-3">
           <div className="flex items-center gap-2">
             <Target className="size-5 text-foreground" />
             <div className="flex-1">
@@ -241,122 +230,393 @@ export function WorkspaceTree({
         <EmptyGoalCard />
       )}
 
-      {/* Empty state */}
-      {!hasAnyProjects && cashTarget ? (
+      {!hasAnyProjects ? (
         <EmptyProjectsCard />
-      ) : (
-        <div className="space-y-2">
-          {/* MONEY branch */}
-          {showMoney && moneyProjects.length > 0 && (
-            <Branch
-              branchKey="money"
-              label={t("workspace.money")}
-              count={moneyProjects.length}
-              expanded={isExpanded("branch:money")}
-              onToggle={() => toggle("branch:money")}
-            >
-              {moneyProjects
-                .filter((p) => !focusProjectId || p.id === focusProjectId)
-                .map((p) => (
-                  <ProjectNode
-                    key={p.id}
-                    project={p}
-                    tasks={tasks.filter((t) => t.project_id === p.id)}
-                    subtasks={subtasks}
-                    expanded={isExpanded(`project:${p.id}`)}
-                    onToggle={() => toggle(`project:${p.id}`)}
-                  >
-                    <FocusButton
-                      onClick={() => focusProject(p.id)}
-                    />
-                  </ProjectNode>
-                ))}
-            </Branch>
-          )}
-
-          {/* ASSET branch */}
-          {showAsset && assetProjects.length > 0 && (
-            <Branch
-              branchKey="asset"
-              label={t("workspace.asset")}
-              count={assetProjects.length}
-              expanded={isExpanded("branch:asset")}
-              onToggle={() => toggle("branch:asset")}
-            >
-              {assetProjects
-                .filter((p) => !focusProjectId || p.id === focusProjectId)
-                .map((p) => (
-                  <ProjectNode
-                    key={p.id}
-                    project={p}
-                    tasks={tasks.filter((t) => t.project_id === p.id)}
-                    subtasks={subtasks}
-                    expanded={isExpanded(`project:${p.id}`)}
-                    onToggle={() => toggle(`project:${p.id}`)}
-                  >
-                    <FocusButton
-                      onClick={() => focusProject(p.id)}
-                    />
-                  </ProjectNode>
-                ))}
-            </Branch>
-          )}
-
-          {/* ENERGY branch */}
-          {showEnergy && energyTasks.length > 0 && (
-            <Branch
-              branchKey="energy"
-              label={t("workspace.energy")}
-              count={energyTasks.length}
-              expanded={isExpanded("branch:energy")}
-              onToggle={() => toggle("branch:energy")}
-            >
-              {energyTasks.map((et) => (
-                <div
-                  key={et.id}
-                  className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/40"
-                >
-                  <Zap className="size-3.5 text-amber-500" />
-                  <span className="flex-1">{et.title}</span>
-                  {et.completed ? (
-                    <CheckCircle2 className="size-3.5 text-emerald-500" />
-                  ) : (
-                    <Circle className="size-3.5 text-muted-foreground/40" />
-                  )}
-                </div>
-              ))}
-            </Branch>
-          )}
-
-          {/* PARKING branch */}
-          {showParking && parkingProjects.length > 0 && (
-            <Branch
-              branchKey="parking"
-              label={t("workspace.parking")}
-              count={parkingProjects.length}
-              expanded={isExpanded("branch:parking")}
-              onToggle={() => toggle("branch:parking")}
-            >
-              {parkingProjects
-                .filter((p) => !focusProjectId || p.id === focusProjectId)
-                .map((p) => (
-                  <ProjectNode
-                    key={p.id}
-                    project={p}
-                    tasks={tasks.filter((t) => t.project_id === p.id)}
-                    subtasks={subtasks}
-                    expanded={isExpanded(`project:${p.id}`)}
-                    onToggle={() => toggle(`project:${p.id}`)}
-                  >
-                    <FocusButton
-                      onClick={() => focusProject(p.id)}
-                    />
-                  </ProjectNode>
-                ))}
-            </Branch>
-          )}
+      ) : sortedGoals ? (
+        <div className="space-y-3">
+          {sortedGoals.map((goal) => {
+            const g = splitProjects(goalProjects(goal));
+            const collapsed = collapsedGoals.has(goal.id);
+            return (
+              <GoalSection
+                key={goal.id}
+                goal={goal}
+                collapsed={collapsed}
+                onToggle={() => toggleGoal(goal.id)}
+              >
+                <TreeBody
+                  seedKey={`${goal.id}:${treeSeed}`}
+                  expandMode={expandMode}
+                  moneyProjects={g.money}
+                  assetProjects={g.asset}
+                  parkingProjects={g.parking}
+                  energyTasks={goal.status === "ACTIVE" ? energyTasks : []}
+                  tasks={tasks}
+                  subtasks={subtasks}
+                />
+              </GoalSection>
+            );
+          })}
         </div>
+      ) : (
+        <TreeBody
+          seedKey={`single:${treeSeed}`}
+          expandMode={expandMode}
+          moneyProjects={fallbackProjects.money}
+          assetProjects={fallbackProjects.asset}
+          parkingProjects={fallbackProjects.parking}
+          energyTasks={energyTasks}
+          tasks={tasks}
+          subtasks={subtasks}
+        />
       )}
+    </div>
+  );
+}
+
+function formattedAmount(n: number) {
+  return `${(n ?? 0).toLocaleString()} ₽`;
+}
+
+function GoalSection({
+  goal,
+  collapsed,
+  onToggle,
+  children,
+}: {
+  goal: Goal;
+  collapsed: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const t = useT();
+  const isActive = goal.status === "ACTIVE";
+  const Icon = isActive ? Target : goal.status === "ACHIEVED" ? Trophy : Lock;
+  return (
+    <div
+      className={cn(
+        "rounded-lg border-2 px-3 py-2 transition-colors",
+        isActive
+          ? "border-foreground/25 bg-foreground/5"
+          : "border-border/50 bg-card/40"
+      )}
+    >
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 py-1 text-left transition-colors hover:bg-accent/30"
+      >
+        <Icon
+          className={cn(
+            "size-4 shrink-0",
+            isActive
+              ? "text-foreground"
+              : goal.status === "ACHIEVED"
+              ? "text-emerald-500"
+              : "text-muted-foreground"
+          )}
+        />
+        <span className="text-sm font-semibold">
+          {goal.title}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {isActive
+            ? t("goals.active")
+            : goal.status === "ACHIEVED"
+            ? t("goals.achieved")
+            : t("goals.locked")}
+        </span>
+        <ChevronRight
+          className={cn(
+            "ml-auto size-4 text-muted-foreground transition-transform duration-200",
+            !collapsed && "rotate-90"
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          "grid transition-all duration-200",
+          collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-1 space-y-1">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A fully self-contained tree body (MONEY / ASSET / ENERGY / PARKING branches)
+ * with its own expand & focus state. Used once per goal.
+ */
+function TreeBody({
+  seedKey,
+  expandMode,
+  moneyProjects,
+  assetProjects,
+  parkingProjects,
+  energyTasks,
+  tasks,
+  subtasks,
+}: {
+  seedKey: string;
+  expandMode: "default" | "all" | "none";
+  moneyProjects: Project[];
+  assetProjects: Project[];
+  parkingProjects: Project[];
+  energyTasks: EnergyTask[];
+  tasks: Task[];
+  subtasks: Subtask[];
+}) {
+  const t = useT();
+
+  const allNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    const branches: [BranchKey, Project[]][] = [
+      ["money", moneyProjects],
+      ["asset", assetProjects],
+      ["parking", parkingProjects],
+    ];
+    for (const [key, projs] of branches) {
+      if (projs.length > 0) ids.add(`branch:${key}`);
+      for (const p of projs) {
+        const active = tasks.filter(
+          (t) =>
+            t.project_id === p.id &&
+            (t.status === "TODO" || t.status === "IN_PROGRESS")
+        );
+        if (active.length > 0) ids.add(`project:${p.id}`);
+      }
+    }
+    if (energyTasks.length > 0) ids.add("branch:energy");
+    return ids;
+  }, [moneyProjects, assetProjects, parkingProjects, energyTasks, tasks]);
+
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () =>
+      new Set(
+        expandMode === "none" ? [] : expandMode === "all" ? allNodeIds : allNodeIds
+      )
+  );
+  const [focusProjectId, setFocusProjectId] = useState<string | null>(null);
+  const [focusBranch, setFocusBranch] = useState<BranchKey | null>(null);
+
+  const isFocused = focusProjectId !== null || focusBranch !== null;
+
+  const toggle = useCallback((id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const showAll = useCallback(() => {
+    setFocusProjectId(null);
+    setFocusBranch(null);
+    setExpanded(new Set(allNodeIds));
+  }, [allNodeIds]);
+
+  const focusProject = useCallback(
+    (projectId: string) => {
+      setFocusProjectId((prev) => {
+        if (prev === projectId) {
+          setExpanded(new Set(allNodeIds));
+          setFocusBranch(null);
+          return null;
+        }
+        const next = new Set<string>();
+        const project = [...moneyProjects, ...assetProjects, ...parkingProjects].find(
+          (p) => p.id === projectId
+        );
+        if (project) {
+          if (project.category === "CASH_NOW" || project.category === "CASH_ENGINE")
+            next.add("branch:money");
+          else if (project.category === "ASSET") next.add("branch:asset");
+          else if (project.category === "PARKING") next.add("branch:parking");
+          next.add(`project:${projectId}`);
+        }
+        setExpanded(next);
+        setFocusBranch(null);
+        return projectId;
+      });
+    },
+    [moneyProjects, assetProjects, parkingProjects, allNodeIds]
+  );
+
+  const focusOnBranch = useCallback(
+    (branch: BranchKey) => {
+      setFocusBranch((prev) => {
+        if (prev === branch) {
+          setExpanded(new Set(allNodeIds));
+          setFocusProjectId(null);
+          return null;
+        }
+        const next = new Set<string>();
+        next.add(`branch:${branch}`);
+        const branchProjects =
+          branch === "money"
+            ? moneyProjects
+            : branch === "asset"
+            ? assetProjects
+            : branch === "parking"
+            ? parkingProjects
+            : [];
+        for (const p of branchProjects) {
+          const active = tasks.filter(
+            (t) =>
+              t.project_id === p.id &&
+              (t.status === "TODO" || t.status === "IN_PROGRESS")
+          );
+          if (active.length > 0) next.add(`project:${p.id}`);
+        }
+        setExpanded(next);
+        setFocusProjectId(null);
+        return branch;
+      });
+    },
+    [moneyProjects, assetProjects, parkingProjects, tasks, allNodeIds]
+  );
+
+  const isExpanded = (id: string) => expanded.has(id);
+
+  const showMoney = !isFocused
+    ? moneyProjects.length > 0
+    : focusProjectId
+    ? moneyProjects.some((p) => p.id === focusProjectId)
+    : focusBranch === "money";
+  const showAsset = !isFocused
+    ? assetProjects.length > 0
+    : focusProjectId
+    ? assetProjects.some((p) => p.id === focusProjectId)
+    : focusBranch === "asset";
+  const showParking = !isFocused
+    ? parkingProjects.length > 0
+    : focusProjectId
+    ? parkingProjects.some((p) => p.id === focusProjectId)
+    : focusBranch === "parking";
+  const showEnergy = !isFocused ? energyTasks.length > 0 : focusBranch === "energy";
+
+  return (
+    <div className="space-y-2">
+      {isFocused && (
+        <Button size="sm" variant="secondary" onClick={showAll}>
+          <Focus className="size-3.5" /> {t("workspace.showAll")}
+        </Button>
+      )}
+
+      {/* MONEY branch */}
+      {showMoney && (
+          <Branch
+            branchKey="money"
+            label={t("workspace.money")}
+            count={moneyProjects.length}
+            expanded={isExpanded("branch:money")}
+            onToggle={() => toggle("branch:money")}
+            onFocus={() => focusOnBranch("money")}
+          >
+            {moneyProjects
+              .filter((p) => !focusProjectId || p.id === focusProjectId)
+              .map((p) => (
+                <ProjectNode
+                  key={p.id}
+                  project={p}
+                  tasks={tasks.filter((t) => t.project_id === p.id)}
+                  subtasks={subtasks}
+                  expanded={isExpanded(`project:${p.id}`)}
+                  onToggle={() => toggle(`project:${p.id}`)}
+                  onFocusProject={() => focusProject(p.id)}
+                >
+                  <FocusButton onClick={() => focusProject(p.id)} />
+                </ProjectNode>
+              ))}
+          </Branch>
+        )}
+
+      {/* ASSET branch */}
+      {showAsset && (
+          <Branch
+            branchKey="asset"
+            label={t("workspace.asset")}
+            count={assetProjects.length}
+            expanded={isExpanded("branch:asset")}
+            onToggle={() => toggle("branch:asset")}
+            onFocus={() => focusOnBranch("asset")}
+          >
+            {assetProjects
+              .filter((p) => !focusProjectId || p.id === focusProjectId)
+              .map((p) => (
+                <ProjectNode
+                  key={p.id}
+                  project={p}
+                  tasks={tasks.filter((t) => t.project_id === p.id)}
+                  subtasks={subtasks}
+                  expanded={isExpanded(`project:${p.id}`)}
+                  onToggle={() => toggle(`project:${p.id}`)}
+                  onFocusProject={() => focusProject(p.id)}
+                >
+                  <FocusButton onClick={() => focusProject(p.id)} />
+                </ProjectNode>
+              ))}
+          </Branch>
+        )}
+
+      {/* ENERGY branch */}
+      {showEnergy && energyTasks.length > 0 && (
+        <Branch
+          branchKey="energy"
+          label={t("workspace.energy")}
+          count={energyTasks.length}
+          expanded={isExpanded("branch:energy")}
+          onToggle={() => toggle("branch:energy")}
+          onFocus={() => focusOnBranch("energy")}
+        >
+          {energyTasks.map((et) => (
+            <div
+              key={et.id}
+              className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/40"
+            >
+              <Zap className="size-3.5 text-amber-500" />
+              <span className="flex-1">{et.title}</span>
+              {et.completed ? (
+                <CheckCircle2 className="size-3.5 text-emerald-500" />
+              ) : (
+                <Circle className="size-3.5 text-muted-foreground/40" />
+              )}
+            </div>
+          ))}
+        </Branch>
+      )}
+
+      {/* PARKING branch */}
+      {showParking && (
+          <Branch
+            branchKey="parking"
+            label={t("workspace.parking")}
+            count={parkingProjects.length}
+            expanded={isExpanded("branch:parking")}
+            onToggle={() => toggle("branch:parking")}
+            onFocus={() => focusOnBranch("parking")}
+          >
+            {parkingProjects
+              .filter((p) => !focusProjectId || p.id === focusProjectId)
+              .map((p) => (
+                <ProjectNode
+                  key={p.id}
+                  project={p}
+                  tasks={tasks.filter((t) => t.project_id === p.id)}
+                  subtasks={subtasks}
+                  expanded={isExpanded(`project:${p.id}`)}
+                  onToggle={() => toggle(`project:${p.id}`)}
+                  onFocusProject={() => focusProject(p.id)}
+                >
+                  <FocusButton onClick={() => focusProject(p.id)} />
+                </ProjectNode>
+              ))}
+          </Branch>
+        )}
     </div>
   );
 }
@@ -411,6 +671,7 @@ function Branch({
   count,
   expanded,
   onToggle,
+  onFocus,
   children,
 }: {
   branchKey: BranchKey;
@@ -418,6 +679,7 @@ function Branch({
   count: number;
   expanded: boolean;
   onToggle: () => void;
+  onFocus?: () => void;
   children: ReactNode;
 }) {
   const meta = BRANCH_META[branchKey];
@@ -425,20 +687,23 @@ function Branch({
 
   return (
     <div className={cn("rounded-lg border-l-2 pl-3 transition-colors", meta.borderColor, meta.bgColor)}>
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center gap-2 py-1.5 text-left transition-colors hover:bg-accent/30"
-      >
-        <Icon className={cn("size-4 shrink-0", meta.color)} />
-        <span className="text-sm font-semibold">{label}</span>
-        <span className="text-xs text-muted-foreground">({count})</span>
-        <ChevronRight
-          className={cn(
-            "ml-auto size-4 text-muted-foreground transition-transform duration-200",
-            expanded && "rotate-90"
-          )}
-        />
-      </button>
+      <div className="group flex items-center">
+        <button
+          onClick={onToggle}
+          className="flex flex-1 items-center gap-2 py-1.5 text-left transition-colors hover:bg-accent/30"
+        >
+          <Icon className={cn("size-4 shrink-0", meta.color)} />
+          <span className="text-sm font-semibold">{label}</span>
+          <span className="text-xs text-muted-foreground">({count})</span>
+          <ChevronRight
+            className={cn(
+              "ml-auto size-4 text-muted-foreground transition-transform duration-200",
+              expanded && "rotate-90"
+            )}
+          />
+        </button>
+        {onFocus && <FocusButton onClick={onFocus} />}
+      </div>
       <div
         className={cn(
           "grid transition-all duration-200",
@@ -459,6 +724,7 @@ function ProjectNode({
   subtasks,
   expanded,
   onToggle,
+  onFocusProject,
   children,
 }: {
   project: Project;
@@ -466,6 +732,7 @@ function ProjectNode({
   subtasks: Subtask[];
   expanded: boolean;
   onToggle: () => void;
+  onFocusProject?: () => void;
   children?: ReactNode;
 }) {
   const t = useT();
@@ -510,7 +777,12 @@ function ProjectNode({
         <div className="overflow-hidden">
           <div className="ml-6 space-y-0.5">
             {activeTasks.map((task) => (
-              <TaskNode key={task.id} task={task} subtasks={subtasks} />
+              <TaskNode
+                key={task.id}
+                task={task}
+                subtasks={subtasks}
+                onFocus={onFocusProject}
+              />
             ))}
           </div>
         </div>
@@ -519,7 +791,15 @@ function ProjectNode({
   );
 }
 
-function TaskNode({ task, subtasks }: { task: Task; subtasks: Subtask[] }) {
+function TaskNode({
+  task,
+  subtasks,
+  onFocus,
+}: {
+  task: Task;
+  subtasks: Subtask[];
+  onFocus?: () => void;
+}) {
   const t = useT();
   const taskSubtasks = subtasks.filter((s) => s.task_id === task.id);
   const done = taskSubtasks.filter((s) => s.completed).length;
@@ -534,10 +814,7 @@ function TaskNode({ task, subtasks }: { task: Task; subtasks: Subtask[] }) {
       <Link
         href={`/app/focus?task=${task.id}`}
         prefetch
-        className={cn(
-          "flex-1 truncate text-sm",
-          isInProgress && "font-medium"
-        )}
+        className={cn("flex-1 truncate text-sm", isInProgress && "font-medium")}
       >
         {task.title}
       </Link>
@@ -551,7 +828,10 @@ function TaskNode({ task, subtasks }: { task: Task; subtasks: Subtask[] }) {
         <div className="flex shrink-0 items-center gap-1.5">
           <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
             <div
-              className={cn("h-full transition-all duration-300", progressBarColor(done, total))}
+              className={cn(
+                "h-full transition-all duration-300",
+                progressBarColor(done, total)
+              )}
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -563,6 +843,7 @@ function TaskNode({ task, subtasks }: { task: Task; subtasks: Subtask[] }) {
       {isInProgress && (
         <span className="size-1.5 shrink-0 rounded-full bg-blue-500" />
       )}
+      {onFocus && <FocusButton onClick={onFocus} />}
     </div>
   );
 }

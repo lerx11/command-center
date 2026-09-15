@@ -148,7 +148,18 @@
       "soundTitle": "Session end sound",
       "soundDescription": "Quiet chime when a Pomodoro ends.",
       "soundOn": "On",
-      "soundOff": "Off"
+      "soundOff": "Off",
+      "exercise": "Exercise",
+      "nextExercise": "Next exercise",
+      "breakTimer": "Break",
+      "breakRemaining": "Break ends in {time}",
+      "exercises": {
+        "eyes": "👁 Eyes — look out the window for 20s, then at a near object for 20s.",
+        "breathing": "🫁 Breathing — inhale 4s, hold 4s, exhale 4s.",
+        "stretch": "🧘 Stretch — stand up, reach overhead for 30s.",
+        "walk": "🚶 Walk — take a short 2-minute walk.",
+        "water": "💧 Water — drink a glass of water."
+      }
     }
   },
   "parking": {
@@ -233,6 +244,37 @@
     "moneyMoved": "Money moved",
     "today": "Today",
     "thisWeek": "This week"
+  },
+  "goals": {
+    "nextGoal": "Next goal",
+    "achieved": "Achieved",
+    "active": "Active",
+    "locked": "Locked",
+    "markAchieved": "Mark achieved",
+    "currentTarget": "Current target"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "description": "Milestones you've unlocked.",
+    "nothingYet": "No achievements yet. Keep going!",
+    "firstTask": "First task",
+    "firstTaskHint": "Complete your very first task",
+    "coreMaster": "Core Master",
+    "coreMasterHint": "All 3 core results done in one day",
+    "pomodoroMaster": "Pomodoro Master",
+    "pomodoroMasterHint": "4 focus sessions in a day",
+    "streak7": "7-day streak",
+    "streak7Hint": "7 days in a row",
+    "streak30": "30-day streak",
+    "streak30Hint": "30 days in a row"
+  },
+  "gamification": {
+    "taskDone": "✓ +1 task",
+    "coreComplete": "🎉 Core complete! Day is a win",
+    "achievementUnlocked": "Achievement unlocked!",
+    "coreMasterTitle": "Core Master",
+    "pomodoroMasterTitle": "Pomodoro Master",
+    "pomodoroComplete": "🍅 Session complete!"
   },
   "workspace": {
     "title": "Command Map",
@@ -408,6 +450,8 @@
     "couldNotSaveReview": "Could not save review.",
     "couldNotPrepareTomorrowPlan": "Could not prepare tomorrow's plan.",
     "couldNotSetTomorrowSlots": "Could not set tomorrow's slots.",
+    "couldNotCreateGoal": "Could not create the goal.",
+    "goalNotFound": "Goal not found.",
     "couldNotUpdateProfile": "Could not update profile.",
     "invalidName": "Invalid name",
     "invalidEmailOrPassword": "Invalid email or password.",

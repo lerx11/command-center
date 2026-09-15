@@ -3,13 +3,14 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { X, Plus, CheckCircle2 } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   addToTodayExtraAction,
   removeFromTodayExtraAction,
+  completeTaskAction,
 } from "@/app/app/tasks/actions";
+import { celebrate } from "@/components/gamification/celebration";
 import { useT } from "@/components/i18n/i18n-provider";
 import { TASK_TYPE_META } from "@/lib/constants";
 import type { Project, Subtask, Task } from "@/lib/types";
@@ -40,6 +41,21 @@ export function ExtraTasks({
       const res = await removeFromTodayExtraAction(fd);
       if (res?.error) toast.error(t(res.error));
       else toast.success(t("toasts.removedFromToday"));
+    });
+  };
+
+  const completeTask = (taskId: string) => {
+    const fd = new FormData();
+    fd.set("id", taskId);
+    startTransition(async () => {
+      const res = await completeTaskAction(fd);
+      if (res?.error) toast.error(t(res.error));
+      else {
+        toast.success(t("toasts.done"));
+        if (res.unlocked?.length) celebrate("achievement", res.unlocked[0]);
+        else if (res.coreComplete) celebrate("core");
+        else celebrate("task");
+      }
     });
   };
 
@@ -114,9 +130,10 @@ export function ExtraTasks({
                 {done ? (
                   <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
                 ) : (
-                  <Link
-                    href={`/app/focus?task=${encodeURIComponent(task.id)}`}
-                    prefetch
+                  <button
+                    onClick={() => completeTask(task.id)}
+                    disabled={pending}
+                    aria-label={t("today.markDone")}
                     className="flex size-4 shrink-0 items-center justify-center rounded-full border border-input transition-colors hover:border-foreground"
                   />
                 )}

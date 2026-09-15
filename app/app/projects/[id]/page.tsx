@@ -5,7 +5,8 @@ import { getT } from "@/lib/i18n";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { TaskActionsClient } from "./task-actions-client";
 import {
   PROJECT_CATEGORY_META,
@@ -76,6 +77,40 @@ export default async function ProjectPage({
 
   return (
     <div className="space-y-8">
+      {/* Back navigation + breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="flex items-center gap-1 text-sm text-muted-foreground">
+          <li>
+            <Link
+              href="/app/projects"
+              className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              {t("common.back")}
+            </Link>
+          </li>
+          <li aria-hidden className="text-muted-foreground/50">
+            <ChevronRight className="size-3.5" />
+          </li>
+          <li>
+            <Link
+              href="/app/projects"
+              className="truncate rounded px-1 py-0.5 transition-colors hover:bg-accent hover:text-foreground"
+            >
+              {t("projects.title")}
+            </Link>
+          </li>
+          <li aria-hidden className="text-muted-foreground/50">
+            <ChevronRight className="size-3.5" />
+          </li>
+          <li className="min-w-0">
+            <span className="block max-w-[50vw] truncate rounded px-1 py-0.5 font-medium text-foreground">
+              {p.title}
+            </span>
+          </li>
+        </ol>
+      </nav>
+
       <header className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">

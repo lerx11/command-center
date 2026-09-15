@@ -18,6 +18,7 @@ import type {
   DailyPlan,
   DailyPlanExtraTask,
   EnergyTask,
+  Goal,
   Project,
   Subtask,
   Task,
@@ -81,6 +82,7 @@ export default async function TodayPage() {
     { data: pj },
     { data: subtasksData },
     { data: extraRows },
+    { data: goalsData },
   ] = await Promise.all([
     slotIds.length > 0
       ? supabase.from("tasks").select("*").in("id", slotIds)
@@ -125,6 +127,12 @@ export default async function TodayPage() {
           .eq("daily_plan_id", plan.id)
           .order("position", { ascending: true })
       : Promise.resolve({ data: [] as DailyPlanExtraTask[] | null }),
+    supabase
+      .from("goals")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "ACTIVE")
+      .maybeSingle(),
   ]);
 
   const slotTasks = (found ?? []) as Task[];
@@ -132,7 +140,23 @@ export default async function TodayPage() {
     id ? slotTasks.find((t) => t.id === id) ?? null : null;
 
   const energyTasks = (et ?? []) as EnergyTask[];
-  const cashTarget = (ct ?? null) as CashTargetType | null;
+  // Show only the ACTIVE goal as the cash target today (multi-goal support).
+  const activeGoal = (goalsData ?? null) as Goal | null;
+  const ctTarget = (ct ?? null) as CashTargetType | null;
+  const cashTarget: CashTargetType | null = activeGoal
+    ? {
+        id: ctTarget?.id ?? "",
+        user_id: ctTarget?.user_id ?? user.id,
+        period: ctTarget?.period ?? currentPeriod(),
+        min_target: activeGoal.min_amount,
+        max_target: activeGoal.max_amount,
+        received: ctTarget?.received ?? null,
+        in_progress: ctTarget?.in_progress ?? null,
+        expected: ctTarget?.expected ?? null,
+        created_at: ctTarget?.created_at ?? new Date().toISOString(),
+        updated_at: ctTarget?.updated_at ?? new Date().toISOString(),
+      }
+    : ctTarget;
   const candidates = (cand ?? []) as Task[];
   const projects = (pj ?? []) as Project[];
   const allSubtasks = (subtasksData ?? []) as Subtask[];
@@ -151,13 +175,15 @@ export default async function TodayPage() {
     return pa - pb;
   });
 
-  // Fetch subtasks for extra tasks too
-  const allTaskIds = [...slotIds, ...extraTaskIds];
-  const { data: extraSubtasksData } = allTaskIds.length > 0 && extraTaskIds.length > 0
+  // Fetch subtasks for extra tasks too. Slot subtasks are already fetched
+  // above in the shared batch (allSubtasks), so only fetch the extras that
+  // are not already present — avoids a redundant query and duplicate rows.
+  const extraSubtasksTaskIds = extraTaskIds.filter((id) => !slotIds.includes(id));
+  const { data: extraSubtasksData } = extraSubtasksTaskIds.length > 0
     ? await supabase
         .from("subtasks")
         .select("*")
-        .in("task_id", allTaskIds)
+        .in("task_id", extraSubtasksTaskIds)
         .order("position", { ascending: true })
     : { data: [] as Subtask[] | null };
   const combinedSubtasks = allSubtasks.length > 0 && extraSubtasksData

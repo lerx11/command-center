@@ -149,7 +149,18 @@
       "soundTitle": "Звук окончания сессии",
       "soundDescription": "Тихий сигнал при завершении Pomodoro.",
       "soundOn": "Включён",
-      "soundOff": "Выключен"
+      "soundOff": "Выключен",
+      "exercise": "Упражнение",
+      "nextExercise": "Следующее упражнение",
+      "breakTimer": "Перерыв",
+      "breakRemaining": "Перерыв закончится через {time}",
+      "exercises": {
+        "eyes": "👁 Глаза — посмотри в окно 20 секунд, потом на ближний объект 20 секунд.",
+        "breathing": "🫁 Дыхание — вдох 4 сек, задержка 4 сек, выдох 4 сек.",
+        "stretch": "🧘 Растяжка — встань, потянись вверх 30 секунд.",
+        "walk": "🚶 Прогулка — пройдись 2 минуты.",
+        "water": "💧 Вода — выпей стакан воды."
+      }
     }
   },
   "parking": {
@@ -234,6 +245,37 @@
     "moneyMoved": "Денег перемещено",
     "today": "Сегодня",
     "thisWeek": "Эта неделя"
+  },
+  "goals": {
+    "nextGoal": "Следующая цель",
+    "achieved": "Достигнута",
+    "active": "Активная",
+    "locked": "Заблокирована",
+    "markAchieved": "Отметить достигнутой",
+    "currentTarget": "Текущая цель"
+  },
+  "achievements": {
+    "title": "Достижения",
+    "description": "Вехи, которые вы открыли.",
+    "nothingYet": "Пока нет достижений. Продолжайте!",
+    "firstTask": "Первая задача",
+    "firstTaskHint": "Завершите самую первую задачу",
+    "coreMaster": "Core Master",
+    "coreMasterHint": "Все 3 кор-результата за один день",
+    "pomodoroMaster": "Pomodoro Master",
+    "pomodoroMasterHint": "4 сессии фокуса за день",
+    "streak7": "Серия 7 дней",
+    "streak7Hint": "7 дней подряд",
+    "streak30": "Серия 30 дней",
+    "streak30Hint": "30 дней подряд"
+  },
+  "gamification": {
+    "taskDone": "✓ +1 задача",
+    "coreComplete": "🎉 Core complete! День успешен",
+    "achievementUnlocked": "Достижение разблокировано!",
+    "coreMasterTitle": "Core Master",
+    "pomodoroMasterTitle": "Pomodoro Master",
+    "pomodoroComplete": "🍅 Сессия завершена!"
   },
   "workspace": {
     "title": "Карта системы",
@@ -409,6 +451,8 @@
     "couldNotSaveReview": "Не удалось сохранить обзор.",
     "couldNotPrepareTomorrowPlan": "Не удалось подготовить план на завтра.",
     "couldNotSetTomorrowSlots": "Не удалось установить слоты на завтра.",
+    "couldNotCreateGoal": "Не удалось создать цель.",
+    "goalNotFound": "Цель не найдена.",
     "couldNotUpdateProfile": "Не удалось обновить профиль.",
     "invalidName": "Неверное имя",
     "invalidEmailOrPassword": "Неверный email или пароль.",

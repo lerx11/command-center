@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { saveFocusSessionAction, moveTaskToTomorrowAction } from "@/app/app/tasks/actions";
+import {
+  saveFocusSessionAction,
+  moveTaskToTomorrowAction,
+  syncAchievementsAction,
+} from "@/app/app/tasks/actions";
+import { celebrate } from "@/components/gamification/celebration";
 import { formatDuration } from "@/lib/utils";
 import { useT } from "@/components/i18n/i18n-provider";
 import { useFocusSession } from "@/components/focus/focus-session-provider";
@@ -42,7 +47,7 @@ export function setSoundEnabled(on: boolean) {
   window.localStorage.setItem(SOUND_STORAGE_KEY, on ? "on" : "off");
 }
 
-// One quiet chime — generated via Web Audio API, no external assets.
+// Louder, more noticeable chime — generated via Web Audio API, no external assets.
 function playChime() {
   if (typeof window === "undefined") return;
   if (!getSoundEnabled()) return;
@@ -56,18 +61,48 @@ function playChime() {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.value = 880; // A5 — soft, not startling.
+    osc.frequency.value = 880; // A5
+    // Louder alert (volume bumped so it's clearly audible).
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 1.3);
+    gain.gain.exponentialRampToValueAtTime(0.7, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.9);
+    // Add a second higher harmonic for a sharper, more noticeable tone.
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = "square";
+    osc2.frequency.value = 1760;
+    gain2.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.7);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc.start(); osc2.start();
+    osc.stop(ctx.currentTime + 0.95); osc2.stop(ctx.currentTime + 0.75);
     osc.onended = () => ctx.close();
   } catch {
     // Silently ignore — sound is opt-in feedback, not a critical path.
   }
+}
+
+// Vibrate + browsers Notification when a session finishes.
+function notifySessionComplete() {
+  if (typeof window === "undefined") return;
+  try {
+    if (navigator.vibrate) navigator.vibrate([220, 110, 220]);
+  } catch { /* ignore */ }
+  const isRu = (document.documentElement.lang || "").startsWith("ru");
+  const text = isRu ? "🍅 Сессия завершена!" : "🍅 Session complete!";
+  try {
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        new Notification("Pomodoro", { body: text });
+      } else if (Notification.permission !== "denied") {
+        void Notification.requestPermission().then((p) => {
+          if (p === "granted") new Notification("Pomodoro", { body: text });
+        });
+      }
+    }
+  } catch { /* ignore */ }
 }
 
 type Phase =
@@ -88,6 +123,7 @@ export function usePomodoroTimer(taskId: string | null, taskTitle: string) {
   const [isLongBreak, setIsLongBreak] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(DEFAULT_DURATION * 60);
   const [remainingAtPause, setRemainingAtPause] = useState<number | null>(null);
+  const [flash, setFlash] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wallRef = useRef<number>(0);
 
@@ -238,6 +274,9 @@ export function usePomodoroTimer(taskId: string | null, taskTitle: string) {
   const handleSessionEnd = useCallback(async () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     playChime();
+    notifySessionComplete();
+    setFlash(true);
+    window.setTimeout(() => setFlash(false), 1400);
 
     if (taskId && session) {
       const fd = new FormData();
@@ -246,6 +285,16 @@ export function usePomodoroTimer(taskId: string | null, taskTitle: string) {
       fd.set("durationSeconds", String(duration * 60 - secondsLeft));
       const res = await saveFocusSessionAction(fd);
       if (res?.error) toast.error(t(res.error));
+      else celebrate("pomodoro");
+    }
+    // Gamification: check for Pomodoro Master after this session.
+    try {
+      const res = await syncAchievementsAction();
+      if (res?.unlocked?.includes("pomodoro_master")) {
+        celebrate("achievement", "pomodoro_master");
+      }
+    } catch {
+      // ignore
     }
     clearSession();
     setPhase("sessionComplete");
@@ -265,6 +314,9 @@ export function usePomodoroTimer(taskId: string | null, taskTitle: string) {
   const handleBreakEnd = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     playChime();
+    notifySessionComplete();
+    setFlash(true);
+    window.setTimeout(() => setFlash(false), 1400);
     setPhase("breakDone");
   }, []);
 
@@ -311,6 +363,7 @@ export function usePomodoroTimer(taskId: string | null, taskTitle: string) {
     display: formatDuration(Math.max(0, secondsLeft)),
     sessionNumber,
     isLongBreak,
+    flash,
     start,
     pause,
     resume,

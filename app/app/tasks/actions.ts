@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { taskSchema, energyTaskSchema, subtaskSchema } from "@/lib/validations";
 import { todayISO, addDays } from "@/lib/utils";
+import { computeUserContext, syncAchievements } from "@/lib/achievements";
 
 async function getUser() {
   const supabase = await createClient();
@@ -128,6 +129,83 @@ export async function setTaskStatusAction(formData: FormData) {
   revalidatePath("/app/projects");
   revalidatePath("/app/review");
   return { success: true as const };
+}
+
+// Complete a task: mark DONE, set completed_at, AND remove it from today's
+// Core slots (big_win/money/asset) and Extra list so it leaves "Today".
+export async function completeTaskAction(formData: FormData) {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+
+  const id = String(formData.get("id"));
+  const date = todayISO();
+
+  // 1) Mark the task done.
+  const { error } = await supabase
+    .from("tasks")
+    .update({ status: "DONE", completed_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { error: "errors.couldNotUpdateTask" };
+
+  // 2) Clear any Core slot referencing this task for today.
+  const { data: plan } = await supabase
+    .from("daily_plans")
+    .select("id, big_win_task_id, money_task_id, asset_task_id")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .maybeSingle();
+  if (plan) {
+    const row = plan as unknown as Record<string, string | null>;
+    const patch: Record<string, unknown> = {};
+    if (row.big_win_task_id === id) patch.big_win_task_id = null;
+    if (row.money_task_id === id) patch.money_task_id = null;
+    if (row.asset_task_id === id) patch.asset_task_id = null;
+    if (Object.keys(patch).length > 0) {
+      await supabase.from("daily_plans").update(patch).eq("id", row.id);
+    }
+  }
+
+  // 3) Remove from today's Extra list.
+  if (plan) {
+    await supabase
+      .from("daily_plan_extra_tasks")
+      .delete()
+      .eq("daily_plan_id", plan.id)
+      .eq("task_id", id)
+      .eq("user_id", user.id);
+  }
+
+  // Gamification: unlock achievements based on current context.
+  let unlocked: string[] = [];
+  let coreComplete = false;
+  try {
+    const ctx = await computeUserContext(supabase, user.id);
+    unlocked = await syncAchievements(supabase, user.id, ctx);
+    coreComplete = ctx.coreComplete;
+  } catch {
+    // Never block task completion if gamification fails.
+  }
+
+  revalidatePath("/app/today");
+  revalidatePath("/app/projects");
+  revalidatePath("/app/review");
+  return { success: true as const, unlocked, coreComplete };
+}
+
+// Re-run achievement checks (called after a Pomodoro session completes).
+export async function syncAchievementsAction() {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "errors.notAuthenticated" };
+  let unlocked: string[] = [];
+  try {
+    const ctx = await computeUserContext(supabase, user.id);
+    unlocked = await syncAchievements(supabase, user.id, ctx);
+  } catch {
+    // ignore
+  }
+  revalidatePath("/app");
+  return { success: true as const, unlocked };
 }
 
 export async function parkTaskAction(formData: FormData) {

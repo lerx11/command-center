@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pause, Play, Check, X, SkipForward, ArrowRight } from "lucide-react";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { usePomodoroTimer, type PomodoroDuration } from "@/hooks/use-pomodoro-timer";
 import { toggleSubtaskAction } from "@/app/app/tasks/actions";
 import { useT } from "@/components/i18n/i18n-provider";
+import { cn } from "@/lib/utils";
 import type { Subtask, Task } from "@/lib/types";
 
 function isTyping(target: EventTarget | null) {
@@ -17,11 +18,13 @@ function isTyping(target: EventTarget | null) {
 }
 
 const DURATION_OPTIONS: PomodoroDuration[] = [25, 50, 90];
+const EXERCISE_KEYS = ["eyes", "breathing", "stretch", "walk", "water"] as const;
 
 export function PomodoroTimer({ task, subtasks }: { task: Task; subtasks: Subtask[] }) {
   const router = useRouter();
   const t = useT();
   const [subtaskPending, startSubtaskTransition] = useTransition();
+  const [exerciseIndex, setExerciseIndex] = useState(0);
   const {
     phase,
     duration,
@@ -29,6 +32,7 @@ export function PomodoroTimer({ task, subtasks }: { task: Task; subtasks: Subtas
     display,
     sessionNumber,
     isLongBreak,
+    flash,
     start,
     pause,
     resume,
@@ -219,7 +223,12 @@ export function PomodoroTimer({ task, subtasks }: { task: Task; subtasks: Subtas
         </div>
       )}
 
-      <p className="mt-12 font-mono text-6xl tabular text-foreground sm:text-8xl">
+      <p
+        className={cn(
+          "mt-12 font-mono text-6xl tabular text-foreground sm:text-8xl",
+          flash && "animate-timer-flash"
+        )}
+      >
         {display}
       </p>
 
@@ -258,6 +267,29 @@ export function PomodoroTimer({ task, subtasks }: { task: Task; subtasks: Subtas
           <X className="size-4" /> {t("common.exit")}
         </Button>
       </div>
+
+      {isBreak && (
+        <div className="mt-8 w-full max-w-md space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            {t("focus.pomodoro.exercise")}
+          </p>
+          <div className="rounded-lg border border-foreground/20 bg-foreground/5 p-4 text-sm sm:text-base">
+            <p key={exerciseIndex} className="animate-pop">
+              {t(`focus.pomodoro.exercises.${EXERCISE_KEYS[exerciseIndex]}`)}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setExerciseIndex((i) => (i + 1) % EXERCISE_KEYS.length)}
+          >
+            <SkipForward className="size-3.5" /> {t("focus.pomodoro.nextExercise")}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {t("focus.pomodoro.breakRemaining").replace("{time}", display)}
+          </p>
+        </div>
+      )}
 
       <p className="mt-8 text-xs text-muted-foreground">
         {t("focus.shortcutHint")}

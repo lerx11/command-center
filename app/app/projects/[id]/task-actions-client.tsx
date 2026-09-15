@@ -15,10 +15,12 @@ import { TaskMenu } from "@/components/tasks/task-menu";
 import { SubtaskList } from "@/components/tasks/subtask-list";
 import {
   setTaskStatusAction,
+  completeTaskAction,
   addToTodayAction,
   removeFromTodayAction,
   addToTodayExtraAction,
 } from "@/app/app/tasks/actions";
+import { celebrate } from "@/components/gamification/celebration";
 import { TASK_TYPE_META } from "@/lib/constants";
 import { useT } from "@/components/i18n/i18n-provider";
 import { todayISO } from "@/lib/utils";
@@ -55,11 +57,25 @@ export function TaskActionsClient({
   const toggle = () => {
     const fd = new FormData();
     fd.set("id", task.id);
-    fd.set("status", done ? "TODO" : "DONE");
+    if (done) {
+      fd.set("status", "TODO");
+    }
     startTransition(async () => {
-      const res = await setTaskStatusAction(fd);
+      const res = done
+        ? await setTaskStatusAction(fd)
+        : await completeTaskAction(fd);
       if (res?.error) toast.error(t(res.error));
-      else if (!done) toast.success(t("toasts.taskCompleted"));
+      else if (!done) {
+        toast.success(t("toasts.taskCompleted"));
+        const g = res as { unlocked?: string[]; coreComplete?: boolean };
+        if (g.unlocked?.length) {
+          celebrate("achievement", g.unlocked[0]);
+        } else if (g.coreComplete) {
+          celebrate("core");
+        } else {
+          celebrate("task");
+        }
+      }
     });
   };
 

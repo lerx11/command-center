@@ -6,6 +6,7 @@ import { BottomNav } from "./bottom-nav";
 import { QuickCaptureFab } from "./quick-capture-fab";
 import { KeyboardShortcuts } from "./keyboard-shortcuts";
 import { FocusSessionProvider } from "@/components/focus/focus-session-provider";
+import { CelebrationOverlay } from "@/components/gamification/celebration";
 
 export function AppShell({
   profileName,
@@ -17,6 +18,7 @@ export function AppShell({
   return (
     <FocusSessionProvider>
       <KeyboardShortcuts />
+      <CelebrationOverlay />
       <div className="flex min-h-svh">
         {/* Desktop sidebar */}
         <Sidebar profileName={profileName} />

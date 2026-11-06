@@ -44,7 +44,27 @@ export async function upsertCashTargetAction(formData: FormData) {
     );
   if (error) return { error: "errors.couldNotSaveCashTarget" };
 
+  // Today shows the ACTIVE goal's amounts as the cash target (see
+  // app/app/today/page.tsx), so sync the edited min/max into the goal too.
+  const { data: activeGoal } = await supabase
+    .from("goals")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
+  if (activeGoal) {
+    const { error: goalError } = await supabase
+      .from("goals")
+      .update({
+        min_amount: isNaN(min) ? 0 : min,
+        max_amount: isNaN(max) ? 0 : max,
+      })
+      .eq("id", activeGoal.id);
+    if (goalError) return { error: "errors.couldNotSaveCashTarget" };
+  }
+
   revalidatePath("/app/today");
+  revalidatePath("/app/workspace");
   return { success: true as const };
 }
 

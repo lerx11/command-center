@@ -32,7 +32,7 @@ export function LanguageToggle({ className }: { className?: string }) {
               aria-checked={active}
               onClick={() => setLocale(l)}
               className={cn(
-                "min-w-9 rounded-[5px] px-2.5 py-1 text-xs font-semibold transition-colors",
+                "min-w-11 rounded-[5px] px-3 py-2.5 text-sm font-semibold transition-colors sm:min-w-9 sm:px-2.5 sm:py-1 sm:text-xs",
                 active
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"

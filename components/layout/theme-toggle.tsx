@@ -16,7 +16,7 @@ export function ThemeToggle() {
   const t = useT();
   return (
     <Select value={theme} onValueChange={setTheme}>
-      <SelectTrigger className="w-full sm:w-40">
+      <SelectTrigger className="h-11! w-full sm:h-9! sm:w-40">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
